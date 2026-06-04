@@ -3,8 +3,7 @@
 
 
 void set_wakeup_src(void);
-void into_hcpu_high(void);
-void into_hcpu_low(void);
 void into_shotdown(void);
+void wdt_dog_reset(void);
 
 #endif

@@ -9,7 +9,6 @@
 #include <math.h>
 #include "ff.h"
 #include "rtthread.h"
-#include "bf0_hal_wdt.h"
 #include "config.h"
 
 #if defined(PKG_USING_BHI260AP)
@@ -4270,14 +4269,7 @@ static void ship_mode_confirm_dialog(lv_event_t *e)
             break;
         case SYSTEM_EVENT_RESTART:
             log_d("Restarting...\n");
-            WDT_HandleTypeDef wdt = {
-                .Instance = hwp_iwdt,
-                .Init = {.Reload = 100, .Reload2 = 100},
-            };
-            HAL_WDT_Init(&wdt);
-            __HAL_WDT_INT(&wdt, 0);     // 复位模式
-            __HAL_WDT_PROTECT(&wdt, 0); // 释放写保护
-            __HAL_WDT_START(&wdt);      // 启动，超时后立即复位
+            wdt_dog_reset();
             break;
         default:
             lv_obj_clean(system_ui.mbox);

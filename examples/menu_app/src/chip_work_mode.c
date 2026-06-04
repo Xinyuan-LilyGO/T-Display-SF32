@@ -5,6 +5,7 @@
 #include <board.h>
 #include <string.h>
 #include "log.h"
+#include "bf0_hal_wdt.h"
 
 #define WAKEUP_PIN 34
 #define LOD_PIN 41
@@ -29,22 +30,6 @@ void set_wakeup_src(void)
     rt_pin_attach_irq(WAKEUP_PIN, PIN_IRQ_MODE_RISING, (void *)gpio_wakeup_handler,
                       (void *)(rt_uint32_t)WAKEUP_PIN); // PA34 GPIO interrupt
     rt_pin_irq_enable(WAKEUP_PIN, 1);
-}
-
-void into_hcpu_high(void)
-{
-#ifdef BSP_USING_PM
-    log_d("into_hcpu_high\r\n");
-    rt_pm_run_enter(PM_RUN_MODE_HIGH_SPEED);
-#endif
-}
-
-void into_hcpu_low(void) // default hcpu low power mode
-{
-#ifdef BSP_USING_PM
-    log_d("into_hcpu_low\r\n");
-    rt_pm_run_enter(PM_RUN_MODE_MEDIUM_SPEED);
-#endif
 }
 
 void into_shotdown(void)
@@ -79,4 +64,16 @@ void into_shotdown(void)
     HAL_PMU_EnterHibernate();
     while (1)
         ;
+}
+
+void wdt_dog_reset(void)
+{
+    WDT_HandleTypeDef wdt = {
+        .Instance = hwp_iwdt,
+        .Init = {.Reload = 100, .Reload2 = 100},
+    };
+    HAL_WDT_Init(&wdt);
+    __HAL_WDT_INT(&wdt, 0);     // 复位模式
+    __HAL_WDT_PROTECT(&wdt, 0); // 释放写保护
+    __HAL_WDT_START(&wdt);      // 启动，超时后立即复位
 }
