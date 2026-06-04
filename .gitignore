@@ -1,0 +1,23 @@
+# 编译中间文件                                                                                                          *.o
+*.d
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# SCONS 构建数据库
+**.sconsign.dblite
+
+# 编辑器/IDE 设置（只忽略当前目录的，不忽略全局的）
+.vscode/
+
+# build project
+**/project/build_t-display-sf32_hcpu/
+
+# tool
+**/tools/SifliTrace_v2.2.6/log/
+
+# claude
+**/.claude/
+Sifli-V2.5.0-T-Display-SF32.code-workspace
+Sifli-V2.4.0-T-Display-SF32.code-workspace

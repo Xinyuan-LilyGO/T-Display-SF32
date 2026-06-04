@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "lora-radio-tester.h": "c",
+        "ui.h": "c"
+    }
+}

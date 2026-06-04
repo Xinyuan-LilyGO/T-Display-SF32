@@ -1,0 +1,9 @@
+set_env gcc
+
+scons --board=t-display-sf32_hcpu -j8
+build_t-display-sf32_hcpu\uart_download.bat
+scons --board=t-display-sf32 --menuconfig
+
+scons --board=sf32lb52-lcd_n16r8_hcpu -j8
+build_sf32lb52-lcd_n16r8_hcpu\uart_download.bat
+scons --board=sf32lb52-lcd_n16r8 --menuconfig

@@ -1,0 +1,24 @@
+import os
+from building import *
+
+# Add source code
+src = Glob('*.c')
+src += Glob('.\gui\*.c')
+
+cwd = GetCurrentDir() # get current dir path
+cwd += cwd + '/gui'
+
+CPPPATH = [cwd]
+
+#Add resources.
+# Ensure directory is created before any builder is executed
+# If the path is not present, it would not be added in "include path" and 'lang_pack.h' dependency would not work
+# Execute(Mkdir('res/strings'))
+# src.extend(SConscript(os.path.join(cwd, 'res/images/SConscript'), variant_dir="res/images", duplicate=0))
+# src.extend(SConscript(os.path.join(cwd, 'res/fonts/SConscript'), variant_dir="res/fonts", duplicate=0))
+# src.extend(SConscript(os.path.join(cwd, 'res/strings/SConscript'), variant_dir="res/strings", duplicate=0))
+
+
+group = DefineGroup('Applications', src, depend = ['PKG_USING_LITTLEVGL2RTT'] ,CPPPATH = CPPPATH)
+
+Return('group')

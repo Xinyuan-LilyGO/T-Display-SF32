@@ -1,0 +1,7 @@
+elm_trans_test 4
+elm_trans_test 4
+framebuf_trans_len 0x00062e58
+framebuf_trans_out_waitrx
+framebuf_trans_crc 0xa32de8a9
+framebuf_trans_out OK
+msh />

@@ -1,0 +1,4 @@
+source "E:/PRJ/SIFLI/SiFli-SDK/customer/boards/t-display-sf32/hcpu/Kconfig.board"
+source "$SIFLI_SDK/customer/boards/Kconfig.v2"
+source "$SIFLI_SDK/Kconfig.v2"
+rsource "Kconfig.proj"

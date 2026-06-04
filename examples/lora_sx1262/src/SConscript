@@ -1,0 +1,17 @@
+import os
+from building import *
+
+# Add source code
+src = Glob('*.c')
+
+cwd = GetCurrentDir() # get current dir path
+
+src += Glob(cwd + '/res/font/*.c')
+src += Glob(cwd + '/res/image/*.c') 
+src += Glob(cwd + '/ui/*.c') 
+
+CPPPATH = [cwd + '/ui']
+
+group = DefineGroup('Applications', src, depend = [''] ,CPPPATH = CPPPATH)
+
+Return('group')

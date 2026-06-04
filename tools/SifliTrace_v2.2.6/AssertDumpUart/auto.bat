@@ -1,0 +1,1 @@
+AssertDumpUart.exe --52x --uart1 --port COM37 --hide 0 --block 4096  --path D:\SVN\AssertDumpUart\Release
