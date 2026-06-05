@@ -741,6 +741,7 @@ static void status_bar_init(lv_obj_t *scr)
     lv_obj_set_style_radius(status_bar, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_all(status_bar, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(status_bar, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(status_bar, LV_OPA_100, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     home_ui.status_bar_bluetooth_icon = lv_label_create(status_bar);
     lv_obj_align(home_ui.status_bar_bluetooth_icon, LV_ALIGN_LEFT_MID, 40, 0);
@@ -923,6 +924,16 @@ static void app_icon_ui_init(struct Page *page)
         lv_obj_scroll_to_view(lv_obj_get_child(app_scroll_cont, last_page->app_id), LV_ANIM_OFF);
         lv_group_focus_obj(lv_obj_get_child(app_scroll_cont, last_page->app_id));
     }
+
+    lv_obj_t *logo_label = lv_label_create(page->root);
+    lv_obj_set_size(logo_label, 200, 32);
+    lv_obj_align(logo_label, LV_ALIGN_TOP_MID, 0, 400);
+    lv_label_set_text(logo_label, "LILYGO");
+    lv_obj_set_style_text_color(logo_label, lv_color_hex(LV_COLOR_THEME_WIHTE), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_opa(logo_label, LV_OPA_80, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(logo_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(logo_label, &lv_font_montserrat_30, LV_PART_MAIN | LV_STATE_DEFAULT);
+
 }
 
 static void home_page_on_create(struct Page *page)
@@ -933,7 +944,6 @@ static void home_page_on_create(struct Page *page)
     lv_obj_set_scroll_dir(page->root, LV_DIR_NONE);
 
     status_bar_init(page->root);
-
     app_icon_ui_init(page);
 }
 
@@ -1583,53 +1593,10 @@ static void music_page_on_create(struct Page *page)
     lv_obj_set_style_text_line_space(music_ui.voide_end_time_label, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(music_ui.voide_end_time_label, LV_TEXT_ALIGN_LEFT, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    // music_ui.volume_img = lv_img_create(page->root);
-    // lv_obj_set_size(music_ui.volume_img, 60, 60);
-    // lv_obj_align(music_ui.volume_img, LV_ALIGN_BOTTOM_LEFT, 20, -20);
-    // lv_obj_set_style_radius(music_ui.volume_img, 30, LV_PART_MAIN | LV_STATE_DEFAULT);
-    // lv_img_set_src(music_ui.volume_img, &_volume_RGB565A8_60x60);
-    // lv_obj_add_flag(music_ui.volume_img, LV_OBJ_FLAG_CLICKABLE);
-    // lv_image_set_pivot(music_ui.volume_img, 30, 30);
-    // lv_image_set_rotation(music_ui.volume_img, 0);
-    // lv_obj_set_style_image_recolor_opa(music_ui.volume_img, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    // lv_obj_set_style_image_opa(music_ui.volume_img, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-    // ui_event_t = MUSIC_EVENT_VOLUME;
-    // lv_obj_add_event_cb(music_ui.volume_img, music_event_cb, LV_EVENT_CLICKED, (void *)(uintptr_t)ui_event_t);
-
-    // // Write codes screen_music_slider_1
-    // uint8_t vol = get_bt_volume();
-    // music_ui.volume_slider = lv_slider_create(page->root);
-    // lv_obj_set_pos(music_ui.volume_slider, 90, 500);
-    // lv_obj_set_size(music_ui.volume_slider, 350, 60);
-    // lv_slider_set_range(music_ui.volume_slider, 0, 15);
-    // lv_slider_set_mode(music_ui.volume_slider, LV_SLIDER_MODE_NORMAL);
-    // lv_slider_set_value(music_ui.volume_slider, vol, LV_ANIM_OFF);
-
-    // // Write style for screen_music_slider_1, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    // lv_obj_set_style_bg_opa(music_ui.volume_slider, 112, LV_PART_MAIN | LV_STATE_DEFAULT);
-    // lv_obj_set_style_bg_color(music_ui.volume_slider, lv_color_hex(LV_COLOR_THEME_WIHTE), LV_PART_MAIN | LV_STATE_DEFAULT);
-    // lv_obj_set_style_bg_grad_dir(music_ui.volume_slider, LV_GRAD_DIR_NONE, LV_PART_MAIN | LV_STATE_DEFAULT);
-    // lv_obj_set_style_radius(music_ui.volume_slider, 30, LV_PART_MAIN | LV_STATE_DEFAULT);
-    // lv_obj_set_style_outline_width(music_ui.volume_slider, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    // lv_obj_set_style_shadow_width(music_ui.volume_slider, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    // // Write style for screen_music_slider_1, Part: LV_PART_INDICATOR, State: LV_STATE_DEFAULT.
-    // lv_obj_set_style_bg_opa(music_ui.volume_slider, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
-    // lv_obj_set_style_bg_color(music_ui.volume_slider, lv_color_hex(LV_COLOR_THEME_WIHTE), LV_PART_INDICATOR | LV_STATE_DEFAULT);
-    // lv_obj_set_style_bg_grad_dir(music_ui.volume_slider, LV_GRAD_DIR_NONE, LV_PART_INDICATOR | LV_STATE_DEFAULT);
-    // lv_obj_set_style_radius(music_ui.volume_slider, 30, LV_PART_INDICATOR | LV_STATE_DEFAULT);
-
-    // // Write style for screen_music_slider_1, Part: LV_PART_KNOB, State: LV_STATE_DEFAULT.
-    // lv_obj_set_style_bg_opa(music_ui.volume_slider, 0, LV_PART_KNOB | LV_STATE_DEFAULT);
-    // lv_obj_set_style_radius(music_ui.volume_slider, 30, LV_PART_KNOB | LV_STATE_DEFAULT);
-    // ui_event_t = MUSIC_EVENT_VOLUME_CHANGE;
-    // lv_obj_add_event_cb(music_ui.volume_slider, music_event_cb, LV_EVENT_VALUE_CHANGED, (void *)(uintptr_t)ui_event_t);
-
     lv_group_add_obj(page->group, music_last_btn);
     lv_group_add_obj(page->group, music_ui.music_pause_btn);
     lv_group_add_obj(page->group, music_next_btn);
-    // lv_group_add_obj(page->group, music_ui.volume_img);
-    // lv_group_add_obj(page->group, music_ui.volume_slider);
+
 }
 
 static void music_event_cb(lv_event_t *e)
@@ -1678,20 +1645,6 @@ static void music_event_cb(lv_event_t *e)
             break;
         }
     }
-    //     else if (code == LV_EVENT_VALUE_CHANGED)
-    //     {
-    //         switch (event_type)
-    //         {
-    //         case MUSIC_EVENT_VOLUME_CHANGE:
-    //             log_d("music_event_cb:MUSIC_EVENT_VOLUME_CHANGE\n");
-    //             int volume = lv_slider_get_value(target_obj);
-    //             log_d("volume:%d\n", volume);
-    // #ifdef AUDIO
-    //             set_bt_volume(volume);
-    // #endif
-    //             break;
-    //         }
-    //     }
 }
 
 static void format_time_str(char *buf, int ms)

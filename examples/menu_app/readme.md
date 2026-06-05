@@ -64,13 +64,13 @@ System Interface: View system information and perform operations such as restart
 | D    | POWER | Power on/Enter ship mode (long press 5s+) |
 
 #### Keyboard key mapping:
-|     | 1            | 2             | 3        | 4               |
-| --- | ------------ | ------------- | -------- | --------------- |
-| 4   | KEY_PREV(⬅)  |               | KEY_HOME |                 |
-| 3   | KEY_ENTER(⏹) | KEY_UP(⬆)     |          | KEY_DOWN(⬇)     |
-| 2   | KEY_NEXT(➡)  | KEY_VOLUME_UP |          | KEY_VOLUME_DOWN |
-| 1   |              | KEY_BL_UP     |          | KEY_BL_DOWN     |
-| 0   |              | KEY_DROPDOWN  |          |                 |
+|     | 1            | 2         | 3        | 4           |
+| --- | ------------ | --------- | -------- | ----------- |
+| 4   | KEY_PREV(⬅)  |           | KEY_HOME |             |
+| 3   | KEY_ENTER(⏹) | KEY_UP(⬆) |          | KEY_DOWN(⬇) |
+| 2   | KEY_NEXT(➡)  |           |          |             |
+| 1   |              |           |          |             |
+| 0   |              |           |          |             |
 
 ```c
 KEY_PREV: Select the previous item
@@ -79,11 +79,6 @@ KEY_NEXT: Select the next item
 KEY_HOME: Main interface
 KEY_UP: For list elements, select the previous item
 KEY_DOWN: For list elements, select the next item
-KEY_VOLUME_UP: Increase volume
-KEY_VOLUME_DOWN: Decrease volume
-KEY_BL_UP: Increase brightness
-KEY_BL_DOWN: Decrease brightness
-KEY_DROPDOWN: Dropdown menu
 ```
 
 # 📝 Compilation and Flashing

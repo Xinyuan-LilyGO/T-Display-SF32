@@ -1,8 +1,12 @@
 <div align="center" markdown="1">
-  <img src="../image/LOGO1.png" alt="LilyGo logo" width="100"/>
+  <img src="./image/LOGO1.png" alt="LilyGo logo" width="100"/>
 </div>
 
-<h1 align = "center">🌈 T-Dispaly-SF32 🌛</h1>
+<h1 align = "center"> T-Dispaly-SF32 </h1>
+
+
+# SDK
+点击网址跳转到SDK，下载并存放在你想要的路径上[https://github.com/Xinyuan-LilyGO/SlFli-SDK-Lilygo](https://github.com/Xinyuan-LilyGO/SlFli-SDK-Lilygo)
 
 # 概述
 T-Dispaly-SF32开发板是基于思澈科技(SiFli)最新推出的超低功耗AIoT MCU芯片SF32LB52X的开发平台。该开发板专为智能穿戴、智能家居、工业传感和物联网应用设计，集成了丰富的外设接口和传感器。

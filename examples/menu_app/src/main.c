@@ -223,8 +223,7 @@ int main(void)
 void btton_handler(int32_t pin, button_action_t button_action)
 {
     rt_device_t lcd_device;
-    // static bool is_lcd_off = false;
-    static uint8_t set_brightness;
+    static uint8_t set_brightness = 70;
     device_switch_t *device_switch = get_device_switch();
 
     switch (button_action)
@@ -237,18 +236,20 @@ void btton_handler(int32_t pin, button_action_t button_action)
             device_switch->lcd_backlight_enable = !device_switch->lcd_backlight_enable;
             if (!device_switch->lcd_backlight_enable)
             {
-                set_brightness = 80;
                 rt_device_control(lcd_device, RTGRAPHIC_CTRL_SET_BRIGHTNESS, &set_brightness);
 #if defined(PKG_USING_PKG_KEY_BOARD)
                 aw21009_set_all_brightness(4095);
+                device_switch->keyboard_led_enable = true;
 #endif
             }
             else
             {
-                set_brightness = 0;
-                rt_device_control(lcd_device, RTGRAPHIC_CTRL_SET_BRIGHTNESS, &set_brightness);
+                rt_device_control(lcd_device, RTGRAPHIC_CTRL_GET_BRIGHTNESS, &set_brightness);
+                uint8_t bri = 0;
+                rt_device_control(lcd_device, RTGRAPHIC_CTRL_SET_BRIGHTNESS, &bri);
 #if defined(PKG_USING_PKG_KEY_BOARD)
                 aw21009_set_all_brightness(0);
+                device_switch->keyboard_led_enable = false;
 #endif
             }
             break;
