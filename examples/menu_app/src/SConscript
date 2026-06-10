@@ -9,8 +9,12 @@ src = Glob('*.c')
 
 cwd = GetCurrentDir() # get current dir path
 
-src += Glob(cwd + '/res/font/*.c')
-src += Glob(cwd + '/res/image/*.c') 
+src.extend(SConscript(os.path.join(cwd, 'res/image/SConscript'), variant_dir="resource/images", duplicate=0))
+
+# src += Glob(cwd + '/res/font/*.c')
+# src += Glob(cwd + '/res/image/*.c') 
+# src += Glob(cwd + '/res/image/large_ezip/*.c') 
+
 
 CPPPATH = [cwd]
 

@@ -265,6 +265,9 @@ void btton_handler(int32_t pin, button_action_t button_action)
             lv_async_call(volume_progress_bar, (void *)audio_get_volume());
         }
         break;
+    case BUTTON_LONG_PRESSED:
+        log_d("button_long pin:%d, action:%d\n", pin, button_action);
+        break;
 
     default:
         break;

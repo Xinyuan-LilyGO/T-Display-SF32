@@ -167,6 +167,8 @@ rt_err_t get_time(date_time_t *current_dt)
                        current_dt->year, current_dt->month, current_dt->day,
                        current_dt->hour, current_dt->minute, current_dt->second);
             set_date_time(*current_dt);
+            set_date(current_dt->year, current_dt->month, current_dt->day);
+            set_time(current_dt->hour, current_dt->minute, current_dt->second);
         }
         else
         {

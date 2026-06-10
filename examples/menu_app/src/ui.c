@@ -103,17 +103,17 @@ static uint32_t keycode_to_lvgl(uint8_t keycode);
 
 /**********object***********/
 static const app_info app_list[APP_SIZE] = {
-    {&_music_RGB565A8_80x80, "MUSIC", {"Use:", "Function:"}, {"Connect BT", "Bluetooth player"}, 2, APP_MUSIC},
-    {&_lora_RGB565A8_80x80, "LORA", {"Chip:", "Frq:", "Power:", "Protocol"}, {"SX1262", "868~915Mhz", "+22dbm", "SPI"}, 4, APP_LORA},
-    {&_imu_RGB565A8_80x80, "Sensor", {"Chip:", "Dof:", "Device", "Protocol"}, {"BHI260AP/BME280", "6-Dof/Hygrothermograph", "Motor/Infrared", "I2C"}, 4, APP_SENSOR},
-    {&_gps_RGB565A8_80x80, "GPS", {"Chip:", "Protocol"}, {"L76K", "Uart"}, 2, APP_GPS},
-    {&_wifi_RGB565A8_80x80, "WIFI", {"Chip:", "Protocol"}, {"ESP32C6", "Uart"}, 2, APP_WIFI},
-    {&_battery_RGB565A8_80x80, "CHARGE", {"Chip:", "Uvlo:", "Ibat:", "Protocol:"}, {"Sgm41562b", "3.0V", "200mA/400mA", "I2C"}, 4, APP_CHARGE},
-    {&_weather_RGB565A8_80x80, "WEATHER", {"Use:", "City:", "Country:", "Timezone:"}, {"Connect BT and Open Pan", "ShenZhen", "China", "+8"}, 4, APP_WEATHER},
-    {&_recording_RGB565A8_80x80, "AUDIO", {"Function:"}, {"Record of audio and play it."}, 1, APP_AUDIO},
-    {&_file_RGB565A8_80x80, "FILE", {"Function:", "Protocol:"}, {"SD card file directory", "SPI"}, 2, APP_FILE},
-    {&_keyboard_RGB565A8_80x80, "KEYBOARD", {"Function:", "Protocol:"}, {"Test keyboard", "I2C"}, 2, APP_KEYBOARD},
-    {&_info_RGB565A8_80x80, "SYSTEM", {"MCU:", "BLUETOOTH:", "LVGL:", "RTOS:", "Version:", "Flash:"}, {"SF32LB52X", "BT/BLE 5.3", "9.2.0", "RT-Thread", "V1.0.0", "16MB"}, 5, APP_SYSTEM},
+    {&music_icon, "MUSIC", {"Use:", "Function:"}, {"Connect BT", "Bluetooth player"}, 2, APP_MUSIC},
+    {&lora_icon, "LORA", {"Chip:", "Frq:", "Power:", "Protocol"}, {"SX1262", "868~915Mhz", "+22dbm", "SPI"}, 4, APP_LORA},
+    {&imu_icon, "Sensor", {"Chip:", "Dof:", "Device", "Protocol"}, {"BHI260AP/BME280", "6-Dof/Hygrothermograph", "Motor/Infrared", "I2C"}, 4, APP_SENSOR},
+    {&gps_icon, "GPS", {"Chip:", "Protocol"}, {"L76K", "Uart"}, 2, APP_GPS},
+    {&wifi_icon, "WIFI", {"Chip:", "Protocol"}, {"ESP32C6", "Uart"}, 2, APP_WIFI},
+    {&battery_icon, "CHARGE", {"Chip:", "Uvlo:", "Ibat:", "Protocol:"}, {"Sgm41562b", "3.0V", "200mA/400mA", "I2C"}, 4, APP_CHARGE},
+    {&weather_icon, "WEATHER", {"Use:", "City:", "Country:", "Timezone:"}, {"Connect BT and Open Pan", "ShenZhen", "China", "+8"}, 4, APP_WEATHER},
+    {&record_icon, "AUDIO", {"Function:"}, {"Record of audio and play it."}, 1, APP_AUDIO},
+    {&file_icon, "FILE", {"Function:", "Protocol:"}, {"SD card file directory", "SPI"}, 2, APP_FILE},
+    {&keyboard_icon, "KEYBOARD", {"Function:", "Protocol:"}, {"Test keyboard", "I2C"}, 2, APP_KEYBOARD},
+    {&info_icon, "SYSTEM", {"MCU:", "BLUETOOTH:", "LVGL:", "RTOS:", "Version:", "Flash:"}, {"SF32LB52X", "BT/BLE 5.3", "9.2.0", "RT-Thread", "V1.0.0", "16MB"}, 5, APP_SYSTEM},
 };
 
 Page page_list[PAGE_SIZE] = {
@@ -741,7 +741,7 @@ static void status_bar_init(lv_obj_t *scr)
     lv_obj_set_style_radius(status_bar, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_all(status_bar, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_shadow_width(status_bar, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(status_bar, LV_OPA_100, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(status_bar, LV_OPA_0, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     home_ui.status_bar_bluetooth_icon = lv_label_create(status_bar);
     lv_obj_align(home_ui.status_bar_bluetooth_icon, LV_ALIGN_LEFT_MID, 40, 0);
@@ -805,7 +805,7 @@ static void app_icon_ui_init(struct Page *page)
     lv_obj_set_scrollbar_mode(app_scroll_cont, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_size(app_scroll_cont, 480, 440);
     lv_obj_align(app_scroll_cont, LV_ALIGN_TOP_MID, 0, 40);
-    lv_obj_set_style_bg_opa(app_scroll_cont, LV_OPA_100, 0);
+    lv_obj_set_style_bg_opa(app_scroll_cont, LV_OPA_0, 0);
     lv_obj_set_style_bg_color(app_scroll_cont, lv_color_hex(LV_COLOR_THEME_BLACK), 0);
     lv_obj_set_style_border_width(app_scroll_cont, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_radius(app_scroll_cont, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -942,6 +942,18 @@ static void home_page_on_create(struct Page *page)
 
     lv_obj_set_scrollbar_mode(page->root, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_scroll_dir(page->root, LV_DIR_NONE);
+
+    lv_obj_t* screen_app_img_3 = lv_image_create(page->root);
+    lv_obj_align(screen_app_img_3, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_set_size(screen_app_img_3, 480, 480);
+    lv_obj_add_flag(screen_app_img_3, LV_OBJ_FLAG_CLICKABLE);
+    lv_image_set_src(screen_app_img_3, &dark_bg2);
+    lv_image_set_pivot(screen_app_img_3, 50,50);
+    lv_image_set_rotation(screen_app_img_3, 0);
+
+    //Write style for screen_app_img_3, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+    lv_obj_set_style_image_recolor_opa(screen_app_img_3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
+    lv_obj_set_style_image_opa(screen_app_img_3, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
 
     status_bar_init(page->root);
     app_icon_ui_init(page);
@@ -3119,23 +3131,23 @@ static void weather_page_on_create(struct Page *page)
     {
         if (weather_code >= 0 && weather_code <= 3)
         {
-            lv_img_set_src(weather_ui.weather_icon, &_sun96_RGB565A8_120x120);
+            lv_img_set_src(weather_ui.weather_icon, &sun96_icon);
         }
         else if (weather_code >= 4 && weather_code <= 9)
         {
-            lv_img_set_src(weather_ui.weather_icon, &_cloudyday96_RGB565A8_120x120);
+            lv_img_set_src(weather_ui.weather_icon, &cloudyday96_icon);
         }
         else if (weather_code >= 10 && weather_code <= 11)
         {
-            lv_img_set_src(weather_ui.weather_icon, &_cloud96_RGB565A8_120x120);
+            lv_img_set_src(weather_ui.weather_icon, &cloud96_icon);
         }
         else if (weather_code >= 12 && weather_code <= 18)
         {
-            lv_img_set_src(weather_ui.weather_icon, &_rain96_RGB565A8_120x120);
+            lv_img_set_src(weather_ui.weather_icon, &rain96_icon);
         }
     }
     else
-        lv_img_set_src(weather_ui.weather_icon, &_sun96_RGB565A8_120x120);
+        lv_img_set_src(weather_ui.weather_icon, &sun96_icon);
 
     weather_ui.weather_temp_label = lv_label_create(page->root);
     lv_obj_set_height(weather_ui.weather_temp_label, 60);
@@ -3233,19 +3245,19 @@ static void weather_timer_callback(lv_timer_t *timer)
         int weather_code = atoi(weather_info.now_config.code);
         if (weather_code >= 0 && weather_code <= 3)
         {
-            lv_img_set_src(weather_ui.weather_icon, &_sun96_RGB565A8_120x120);
+            lv_img_set_src(weather_ui.weather_icon, &sun96_icon);
         }
         else if (weather_code >= 4 && weather_code <= 9)
         {
-            lv_img_set_src(weather_ui.weather_icon, &_cloudyday96_RGB565A8_120x120);
+            lv_img_set_src(weather_ui.weather_icon, &cloudyday96_icon);
         }
         else if (weather_code >= 10 && weather_code <= 11)
         {
-            lv_img_set_src(weather_ui.weather_icon, &_cloud96_RGB565A8_120x120);
+            lv_img_set_src(weather_ui.weather_icon, &cloud96_icon);
         }
         else if (weather_code >= 12 && weather_code <= 18)
         {
-            lv_img_set_src(weather_ui.weather_icon, &_rain96_RGB565A8_120x120);
+            lv_img_set_src(weather_ui.weather_icon, &rain96_icon);
         }
 
         rt_free(weather);
@@ -3273,19 +3285,19 @@ static void weather_event_cb(lv_event_t *e)
             int weather_code = atoi(weather_info.now_config.code);
             if (weather_code >= 0 && weather_code <= 3)
             {
-                lv_img_set_src(weather_ui.weather_icon, &_sun96_RGB565A8_120x120);
+                lv_img_set_src(weather_ui.weather_icon, &sun96_icon);
             }
             else if (weather_code >= 4 && weather_code <= 9)
             {
-                lv_img_set_src(weather_ui.weather_icon, &_cloudyday96_RGB565A8_120x120);
+                lv_img_set_src(weather_ui.weather_icon, &cloudyday96_icon);
             }
             else if (weather_code >= 10 && weather_code <= 11)
             {
-                lv_img_set_src(weather_ui.weather_icon, &_cloud96_RGB565A8_120x120);
+                lv_img_set_src(weather_ui.weather_icon, &cloud96_icon);
             }
             else if (weather_code >= 12 && weather_code <= 18)
             {
-                lv_img_set_src(weather_ui.weather_icon, &_rain96_RGB565A8_120x120);
+                lv_img_set_src(weather_ui.weather_icon, &rain96_icon);
             }
 
             rt_free(weather);

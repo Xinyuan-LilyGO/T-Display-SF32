@@ -229,24 +229,25 @@ extern "C"
 
     LV_FONT_DECLARE(lv_font_simsun_16_cjk);
 
-    LV_IMG_DECLARE(_volume_RGB565A8_60x60);
-    LV_IMG_DECLARE(_start_RGB565A8_120x120);
-    LV_IMG_DECLARE(_battery_RGB565A8_80x80);
-    LV_IMG_DECLARE(_imu_RGB565A8_80x80);
-    LV_IMG_DECLARE(_gps_RGB565A8_80x80);
-    LV_IMG_DECLARE(_wifi_RGB565A8_80x80);
-    LV_IMG_DECLARE(_lora_RGB565A8_80x80);
-    LV_IMG_DECLARE(_timer_RGB565A8_80x80);
-    LV_IMG_DECLARE(_weather_RGB565A8_80x80);
-    LV_IMG_DECLARE(_music_RGB565A8_80x80);
-    LV_IMG_DECLARE(_recording_RGB565A8_80x80);
-    LV_IMG_DECLARE(_file_RGB565A8_80x80);
-    LV_IMG_DECLARE(_keyboard_RGB565A8_80x80);
-    LV_IMG_DECLARE(_info_RGB565A8_80x80);
-    LV_IMG_DECLARE(_cloud96_RGB565A8_120x120);
-    LV_IMG_DECLARE(_cloudyday96_RGB565A8_120x120);
-    LV_IMG_DECLARE(_rain96_RGB565A8_120x120);
-    LV_IMG_DECLARE(_sun96_RGB565A8_120x120);
+    /* ezip */
+    LV_IMG_DECLARE(music_icon);
+    LV_IMG_DECLARE(lora_icon);
+    LV_IMG_DECLARE(imu_icon);
+    LV_IMG_DECLARE(gps_icon);
+    LV_IMG_DECLARE(wifi_icon);
+    LV_IMG_DECLARE(battery_icon);
+    LV_IMG_DECLARE(weather_icon);
+    LV_IMG_DECLARE(record_icon);
+    LV_IMG_DECLARE(file_icon);
+    LV_IMG_DECLARE(keyboard_icon);
+    LV_IMG_DECLARE(info_icon);
+    LV_IMG_DECLARE(cloud96_icon);
+    LV_IMG_DECLARE(cloudyday96_icon);
+    LV_IMG_DECLARE(rain96_icon);
+    LV_IMG_DECLARE(sun96_icon);
+    LV_IMG_DECLARE(clock_digital_bg);
+    LV_IMG_DECLARE(pink_flowers);
+    LV_IMG_DECLARE(dark_bg2);
 
     typedef struct
     {
