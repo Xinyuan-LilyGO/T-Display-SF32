@@ -60,7 +60,7 @@ The T-SF32-Display development board is a platform based on SiFli's latest ultra
 | JTAG/SWD  | -       |             |
 
 ## T-SF32-Display Power Consumption
-Please refer to the [Power Consumption Test Report](./test/T-SF32-Display-power.pdf), located at “./test/T-SF32-Display-power.pdf”.
+Please refer to the [Power Consumption Test Report](./lowpowertest/T-SF32-Display-power.pdf), located at “./lowpowertest/T-SF32-Display-power.pdf”.
 
 # Environment Setup
 ## Windows

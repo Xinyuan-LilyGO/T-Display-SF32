@@ -64,7 +64,7 @@ T-SF32-Dispaly开发板是基于思澈科技(SiFli)最新推出的超低功耗AI
 | JTAG/SWD | -      |      |
 
 ## T-SF32-Dispaly功耗
-请查看[功耗测试报告](./test/T-SF32-Display-power.pdf)，在“./test/T-SF32-Display-power.pdf”目录。
+请查看[功耗测试报告](./lowpowertest/T-SF32-Display-power.pdf)，在“./lowpowertest/T-SF32-Display-power.pdf”目录。
 
 # 环境安装
 ## Windows
