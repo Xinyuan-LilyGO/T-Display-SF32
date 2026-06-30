@@ -24,6 +24,8 @@ typedef struct FileNode {
 } FileNode;
 
 rt_err_t sdcard_init(void);
+rt_err_t sdcard_deinit(void);
+bool sd_card_is_ready(void);
 bool list_files(char *path, int depth);
 bool list_music_files(void);
 void free_file_list(void);

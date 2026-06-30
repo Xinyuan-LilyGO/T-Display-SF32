@@ -174,6 +174,7 @@ extern "C"
         UI_UPDATE_AUDIO_PLAY_BTN_STOP,
         UI_UPDATE_INIT_ERROR,
         UI_UPDATE_FILE_LIST_READY,
+        UI_UPDATE_LOW_BATTERY_COUNTDOWN,
     };
     typedef uint8_t ui_update_type_t; // ✅ 优化：使用 uint8_t
 
@@ -246,7 +247,6 @@ extern "C"
     LV_IMG_DECLARE(rain96_icon);
     LV_IMG_DECLARE(sun96_icon);
     LV_IMG_DECLARE(clock_digital_bg);
-    LV_IMG_DECLARE(pink_flowers);
     LV_IMG_DECLARE(dark_bg2);
 
     typedef struct
@@ -425,6 +425,9 @@ extern "C"
     void wifi_update_resp_cb(void *data);
     void wifi_update_wifi_status(void *data);
     void volume_progress_bar(void *data);
+    void low_battery_countdown_alert(void *countdown);
+    void low_battery_countdown_dismiss(void *unused);
+    void low_battery_countdown_reset(void *unused);
 
     rt_mailbox_t get_lvgl_mb(void);
     device_switch_t *get_device_switch(void);

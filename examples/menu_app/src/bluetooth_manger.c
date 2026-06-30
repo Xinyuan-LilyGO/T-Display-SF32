@@ -41,7 +41,7 @@ static void bt_app_connect_pan_timeout_handle(void *parameter);
 rt_err_t sf32_bluetooth_init(void)
 {
     uint32_t value;
-    audio_pa_open();
+    // audio_pa_open();
     g_bt_app_env.g_bt_app_mb = rt_mb_create("bt_app", 8, RT_IPC_FLAG_FIFO);
     RT_ASSERT(g_bt_app_env.g_bt_app_mb);
     // #ifdef BSP_BT_CONNECTION_MANAGER
@@ -75,7 +75,7 @@ rt_err_t sf32_bluetooth_init(void)
     strcpy(current_music.album, "No album");
     current_music.current_ms = 0;
     current_music.duration_ms = 0;
-    
+
     // Update Bluetooth name
     bt_app_task = rt_thread_create("bt_app", bt_app_thread_entry, RT_NULL, 2 * 1024, RT_THREAD_PRIORITY_MIDDLE, 10);
     rt_thread_startup(bt_app_task);
@@ -119,6 +119,9 @@ void bt_app_thread_entry(void *parameter)
             bt_interface_avrcp_next();
             break;
         }
+        default:
+            LOG_I("bt_app_thread_entry unknown value: %d", value);
+            break;
         }
     }
 }
@@ -153,6 +156,11 @@ static int bt_common_event_handler(uint16_t event_id, uint8_t *data, uint16_t da
         memset(&env->bd_addr, 0xFF, sizeof(env->bd_addr));
         if (env->pan_connect_timer)
             rt_timer_stop(env->pan_connect_timer);
+        audio_pa_close();
+
+        env->is_a2dp_connected = 0;
+        env->is_abs_enabled = 0;
+        env->bluetooth_pan = false;
         break;
     }
 
@@ -213,6 +221,8 @@ static int bt_pan_event_handler(uint16_t event_id, uint8_t *data, uint16_t data_
     case BT_NOTIFY_PAN_PROFILE_DISCONNECTED:
         LOG_I("pan disconnect with remote device\n");
         g_bt_app_env.bluetooth_pan = false;
+        if (env->pan_connect_timer)
+            rt_timer_stop(env->pan_connect_timer);
         break;
 
     default:
@@ -291,7 +301,6 @@ static int bt_avrcp_event_handler(uint16_t event_id, uint8_t *data, uint16_t dat
         if (voide_start == 1 || voide_start == 0)
         {
             current_music.is_playing = voide_start;
-            // lv_async_call(music_pause_btn_update, (void *)(uintptr_t)current_music.is_playing);
         }
 
         break;
@@ -305,7 +314,6 @@ static int bt_avrcp_event_handler(uint16_t event_id, uint8_t *data, uint16_t dat
             curren_music_time_ms = (data[3] << 24) | (data[2] << 16) |
                                    (data[1] << 8) | data[0];
             current_music.current_ms = curren_music_time_ms;
-            // lv_async_call(music_current_time_update, (void *)(uintptr_t)current_music.current_ms);
         }
         break;
     }
@@ -350,6 +358,7 @@ static int bt_sifli_notify_common_event_hdl(uint16_t event_id, uint8_t *data, ui
         LOG_I("BT stack close complete");
         break;
     case BT_NOTIFY_COMMON_DISCOVER_IND:
+        break;
     case BT_NOTIFY_COMMON_INQUIRY_CMP:
         break;
     }
@@ -358,24 +367,24 @@ static int bt_sifli_notify_common_event_hdl(uint16_t event_id, uint8_t *data, ui
 
 static int bt_app_interface_event_handle(uint16_t type, uint16_t event_id, uint8_t *data, uint16_t data_len)
 {
-    if (type == BT_NOTIFY_COMMON)
+    int ret = 0;
+    switch (type)
     {
+    case BT_NOTIFY_COMMON:
         bt_sifli_notify_common_event_hdl(event_id, data, data_len);
-        return bt_common_event_handler(event_id, data, data_len);
+        ret = bt_common_event_handler(event_id, data, data_len);
+        break;
+    case BT_NOTIFY_PAN:
+        ret = bt_pan_event_handler(event_id, data, data_len);
+        break;
+    case BT_NOTIFY_A2DP:
+        ret = bt_a2dp_event_handler(event_id, data, data_len);
+        break;
+    case BT_NOTIFY_AVRCP:
+        ret = bt_avrcp_event_handler(event_id, data, data_len);
+        break;
     }
-    else if (type == BT_NOTIFY_PAN)
-    {
-        return bt_pan_event_handler(event_id, data, data_len);
-    }
-    else if (type == BT_NOTIFY_A2DP)
-    {
-        return bt_a2dp_event_handler(event_id, data, data_len);
-    }
-    else if (type == BT_NOTIFY_AVRCP)
-    {
-        return bt_avrcp_event_handler(event_id, data, data_len);
-    }
-    return 0;
+    return ret;
 }
 
 static void parse_song_title(uint8_t *data, uint16_t len)
@@ -387,8 +396,6 @@ static void parse_song_title(uint8_t *data, uint16_t len)
     memcpy(current_music.title, &data[0], text_len);
     current_music.title[text_len] = '\0';
     LOG_I("Song Title: %s", current_music.title); // 处理歌曲标题
-
-    // lv_async_call(music_event_name_info_update, (void *)current_music.title);
 }
 
 static void parse_song_artist(uint8_t *data, uint16_t len)
@@ -400,7 +407,6 @@ static void parse_song_artist(uint8_t *data, uint16_t len)
     memcpy(current_music.artist, &data[0], text_len);
     current_music.artist[text_len] = '\0';
     LOG_I("Song Artist: %s", current_music.artist); // 处理歌曲作者
-    // lv_async_call(music_event_artist_info_update, (void *)current_music.artist);
 }
 
 static void parse_song_album(uint8_t *data, uint16_t len)
@@ -411,7 +417,6 @@ static void parse_song_album(uint8_t *data, uint16_t len)
 
     memcpy(current_music.album, &data[0], text_len);
     current_music.album[text_len] = '\0';
-    // LOG_I("Song Album: %s", current_music.album); // 处理歌曲专辑
 }
 
 static void parse_song_playtime(uint8_t *data, uint16_t len)
@@ -436,7 +441,6 @@ static void parse_song_playtime(uint8_t *data, uint16_t len)
     }
 
     current_music.duration_ms = duration_ms;
-    // lv_async_call(music_progress_update, (void *)(uintptr_t)current_music.duration_ms);
 
     // LOG_I("Parsed duration: %lu ms (%02d:%02d:%02d)",
     //       duration_ms,

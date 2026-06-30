@@ -1,159 +1,112 @@
-<div align="center" markdown="1">
-  <img src="./image/LOGO1.png" alt="LilyGo logo" width="100"/>
-</div>
-
-<h1 align = "center"> T-Dispaly-SF32 </h1>
+<h1 align = “center”> T-SF32-Display </h1>
 
 
 # SDK
-点击网址跳转到SDK，下载并存放在你想要的路径上[https://github.com/Xinyuan-LilyGO/SlFli-SDK-Lilygo](https://github.com/Xinyuan-LilyGO/SlFli-SDK-Lilygo)
+Click the link below to download the SDK and place it in your desired path: [https://github.com/Xinyuan-LilyGO/SlFli-SDK-Lilygo](https://github.com/Xinyuan-LilyGO/SlFli-SDK-Lilygo)
+To update the SDK version, please refer to the update_sdk_install.md document: [https://github.com/Xinyuan-LilyGO/SlFli-SDK-Lilygo/blob/master/update_sdk_install.md](https://github.com/Xinyuan-LilyGO/SlFli-SDK-Lilygo/blob/master/update_sdk_install.md)
 
-# 概述
-T-Dispaly-SF32开发板是基于思澈科技(SiFli)最新推出的超低功耗AIoT MCU芯片SF32LB52X的开发平台。该开发板专为智能穿戴、智能家居、工业传感和物联网应用设计，集成了丰富的外设接口和传感器。
+# Overview
+The T-SF32-Display development board is a platform based on SiFli's latest ultra-low-power AIoT MCU chip SF32LB52X. It is designed for smart wearables, smart home, industrial sensing, and IoT applications, featuring a rich set of peripheral interfaces and sensors.
 
-# 硬件特性
-## 1、MCU
-|            | SF32LB52X                                |
-| ---------- | ---------------------------------------- |
-| 型号       | SF32LB52X                                |
-| 处理器     | Arm Cortex-M33 STAR-MC1大小核架构        |
-| 大核(HCPU) | 192MHz，787 CoreMark                     |
-| 小核(LCPU) | 24MHz                                    |
-| 内存       | 576KB SRAM (512KB+64KB)                  |
-| 蓝牙       | 双模蓝牙5.3 (BLE 5.3, Classic Bluetooth) |
-| 图形引擎   | ePicassoTM 2.5D高性能图形引擎            |
-| 工作电压   | 1.71V~3.63V                              |
+# Hardware Features
+## 1. MCU
+|                    | SF32LB52X                                            |
+| ------------------ | ---------------------------------------------------- |
+| Model              | SF32LB52X                                            |
+| Processor          | Arm Cortex-M33 STAR-MC1 big.LITTLE architecture      |
+| Big Core (HCPU)    | 192MHz, 787 CoreMark                                 |
+| Little Core (LCPU) | 24MHz                                                |
+| Memory             | 576KB SRAM (512KB+64KB)                              |
+| Bluetooth          | Dual-mode Bluetooth 5.3 (BLE 5.3, Classic Bluetooth) |
+| Graphics Engine    | ePicassoTM 2.5D high-performance graphics engine     |
+| Operating Voltage  | 3.2V-4.7V                                            |
 
-## 2、外设模块
-| 模块     | 型号              | 描述                                                 |
-| -------- | ----------------- | ---------------------------------------------------- |
-| 蓝牙     | -                 | 双模蓝牙5.3，支持BLE Audio，接收灵敏度-100dBm(1Mbps) |
-| 音频     | -                 | 24-bit音频ADC/DAC，支持蓝牙音频传输                  |
-| LoRa     | SX1262            | 433/868/915MHz，低功耗，高接收灵敏度                 |
-| SD卡     | MicroSD           | 支持SDHC/SDXC                                        |
-| IMU      | BHI260AP/ICM20948 | 三轴加速度计、陀螺仪、磁力计，低功耗模式             |
-| 充电管理 | BQ21080           | USB PD快充，电池管理，支持多种充电协议               |
-| 键盘     | TAC8418           | 8x8矩阵键盘，低功耗设计                              |
+## 2. Peripheral Modules
+| Module            | Model             | Description                                                           |
+| ----------------- | ----------------- | --------------------------------------------------------------------- |
+| Bluetooth         | -                 | Dual-mode Bluetooth 5.3, BLE Audio, RX sensitivity -100dBm (1Mbps)    |
+| Audio             | -                 | 24-bit audio ADC/DAC, Bluetooth audio streaming                       |
+| LoRa              | SX1262            | 433/868/915MHz, low power, high RX sensitivity                        |
+| TF Card           | MicroSD           | Supports SDHC/SDXC                                                    |
+| IMU               | BHI260AP          | 3-axis accelerometer, gyroscope, magnetometer, low-power mode         |
+| Charge Management | SGM41562B         | USB PD fast charging, battery management, multiple charging protocols |
+| Keyboard          | TAC8418 + AW21009 | 8x8 matrix keyboard, low-power design                                 |
+| GPS               | L76K              | Supports NMEA, CASIC protocols, high-precision positioning            |
+| Temp & Humidity   | BME280            |                                                                       |
+| IR Transmitter    | VSMY14940         |                                                                       |
+| Vibration Motor   | AW86224           |                                                                       |
 
-## 3、存储
-| 模块  | 型号 |
-| ----- | ---- |
-| Flash | 16MB |
-| PSRAM | 8MB  |
-| TF    | -    |
+## 3. Storage
+| Module | Model |
+| ------ | ----- |
+| Flash  | 16MB  |
+| PSRAM  | 8MB   |
 
-## 4、显示
-| 模块          | 型号     |
+## 4. Display
+| Module        | Model    |
 | ------------- | -------- |
-| AMOLED(2.16") | (CO5300) |
-| 触摸屏        | CST9220  |
+| AMOLED(2.16”) | (CO5300) |
+| Touch Screen  | CST9220  |
 
-## 5、接口
-| 接口     | 类型   | 描述 |
-| -------- | ------ | ---- |
-| USB      | Type-C |      |
-| 串口     | UART   |      |
-| I2C      | 4通道  |      |
-| SPI      | 2通道  |      |
-| GPIO     | 45个   |      |
-| 音频     | 3.5mm  |      |
-| JTAG/SWD | -      |      |
+## 5. Interfaces
+| Interface | Type    | Description |
+| --------- | ------- | ----------- |
+| USB       | Type-C  |             |
+| Serial    | UART    |             |
+| I2C       | 4 ch    |             |
+| SPI       | 2 ch    |             |
+| GPIO      | 45 pins |             |
+| Audio     | 3.5mm   |             |
+| JTAG/SWD  | -       |             |
 
-## T-Dispaly-SF32功耗
-| 模式              | 功耗   | 例程                     |
-| ----------------- | ------ | ------------------------ |
-| 关机              | 6uA    | Lilygo_examples/menu_app |
-| 运行              | 26.6mA | Lilygo_examples/menu_app |
-| 低功耗模式        | --     | Lilygo_examples/pm       |
-| 运输模式          | 0mA    | Lilygo_examples/menu_app |
-| LORA (TX +22dbm)  | 45mA   | Lilygo_examples/menu_app |
-| LORA (RX)         | 30mA   | Lilygo_examples/menu_app |
-| 最大亮度          | 27.7mA | Lilygo_examples/menu_app |
-| 最小亮度          | 26.0mA | Lilygo_examples/menu_app |
-| 蓝牙开启+音乐播放 | 44.7mA | Lilygo_examples/menu_app |
+## T-SF32-Display Power Consumption
+Please refer to the [Power Consumption Test Report](./test/T-SF32-Display-power.pdf), located at “./test/T-SF32-Display-power.pdf”.
 
-
-# 环境安装
+# Environment Setup
 ## Windows
-
-### 开发环境准备
-1. Python(version:3.9-3.14):安装完成后，确保将 Python 添加到系统的环境变量中。
-2. Terminal setup:SiFli-SDK 脚本安装仅支持powershell，推荐使用PowerShell 7版本。
-3. 将本仓库克隆到本地。
-
-### 安装工具
-1. 打开 PowerShell 终端，运行以下命令：
-```powershell
-    cd OpenSiFli\sifli-sdk // 进入SiFli-SDK目录
-    .\export.ps1
-```
-![PowerShell](./image/PowerShell.png)
-##### 注意:
-每次打开新的终端窗口都需要在SDK根目录下运行一次 export.ps1 脚本设置环境变量。注意，必须要在SDK根目录下运行该脚本，否则会导致运行失败或者编译错误。
-
-### Windows Terminal 快捷配置
-如果需要经常运行 SiFli-SDK，并且希望在每次打开终端时自动设置环境变量，可以新建一个 Windows Terminal 配置文件，具体步骤如下：
-
-1. 打开 Windows Terminal,按下 `Ctrl + '+'`, 打开设置。点击添加新的配置文件，选择复制配置文件 Windows PowerShell，然后按照以下步骤进行操作：
-![PowerShell](./image/set_powershell.png)
-2. 将名称改为SiFli-SDK,把命令行的配置改为如下,启动目录改为使用父进程目录,最后的export.ps1文件位置改成你的SDK路径:
-```powershell
-%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe  -ExecutionPolicy Bypass -NoExit -File  D:\SIFIL\SiFli-SDK\export.ps1
-```
-![PowerShell](./image/set_powershell2.png)
-##### 后续只需要在任意代码目录下打开Windows Terminal，点击右上角的下拉菜单，选择SiFli-SDK，就可以自动设置环境变量了。在新打开的窗口中就可以使用SDK的编译和下载命令了
-
-### VSCode 快捷配置
-如果使用VSCode，可以按照以下步骤进行配置：
-
-1. 打开 VSCode,找到settings文件，在文件加入下面代码，修改你的SIFLI路径，完成后保存，即可在vscode快捷打开SIFLI终端。
-```c
-    "terminal.integrated.profiles.windows": {
-        "SF32": {
-            "path": "C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
-            "args": [
-                "-ExecutionPolicy",
-                "Bypass",
-                "-NoExit",
-                "-File",
-                "E:\\PRJ\\SIFLI\\OpenSiFli\\sifli-sdk\\export.ps1"  //修改成你的SDK安装路径
-            ]
-        }
-    }
-```
-![VSCode](./image/vscode_sfili.png)
+Please refer to [T-SF32-Display SIFLI-SDK Windows Installation](https://github.com/Xinyuan-LilyGO/SlFli-SDK-Lilygo/blob/master/readme.md)
 
 ## Linux and macOS
-请参考[SFILI-SDK macOS and Linux Installation](https://docs.sifli.com/projects/sdk/v2.4/sf32lb52x/quickstart/install/script/unix.html)
+Please refer to [SIFLI-SDK macOS and Linux Installation](https://docs.sifli.com/projects/sdk/v2.4/sf32lb52x/quickstart/install/script/unix.html)
 
-# 编译和烧录
-1. 先按照安装环境的要求安装好依赖包，并配置好环境变量(以下命令在powershell中执行)
+# Build and Flash
+1. First, install the required dependencies and configure environment variables as per the installation guide (the following commands are executed in PowerShell):
 ```powershell
-    cd SIFLI\T-Display-SF32\examples\rt_os\rt_driver\project //进入工程目录
-    scons --board=t-display-sf32_hcpu -j8   //编译
-    build_t-display-sf32_hcpu\uart_download.bat     //烧录
+    cd SIFLI\T-Display-SF32\examples\rt_os\rt_driver\project  # Enter project directory
+    scons --board=t-display-sf32_hcpu -j8   # Build
+    build_t-display-sf32_hcpu\uart_download.bat     # Flash
 ```
-2. 等待编译完成，执行build_t-display-sf32_hcpu\uart_download.bat命令，在输入设备端口号，即可烧录。
-3. 示例图片
+2. Wait for the build to complete, then run the `build_t-display-sf32_hcpu\uart_download.bat` command and enter the device port number to flash the firmware.
+3. Example screenshots:
 ![Build](./image/build1.png)
 ![Build](./image/bulid.png)
 ![Build](./image/build3.png)
 
-# 🎯官网文档
-本例程参考官方网站给出示例，具体文档请参考以下链接：
-[SFILI-SDK](https://docs.sifli.com/projects/sdk/v2.4/sf32lb52x/index.html)
-[SFILI-WIKI](https://wiki.sifli.com/)
+# Official Documentation
+This project references examples from the official website. For detailed documentation, please refer to the following links:
+[SIFLI-SDK](https://docs.sifli.com/projects/sdk/v2.4/sf32lb52x/index.html)
+[SIFLI-WIKI](https://wiki.sifli.com/)
 [RT-Thread](https://www.rt-thread.org/document/site/#/rt-thread-version/rt-thread-standard/README)
 
 # FAQ
 
-#### 1. 为什么在menuconfig中已经配置了蓝牙相关宏，但是无法正常使用蓝牙功能？
-可能原因：
-1.在SConript和SConstruct中，没有添加LCPU的编译选项相关文件, lcpu_general_ble_img 里面是LCPU默认的代码，里面包含了BLE的启动，对于用户只使用BLE的基本功能，可以将lcpu_img.c加入用户HCPU工程，参考BLE里面的示例使用。。
+#### 1. Why can't I use Bluetooth even after configuring Bluetooth-related macros in menuconfig?
+Possible reasons:
+1. The LCPU compilation files are not added in SConscript and SConstruct. The `lcpu_general_ble_img` directory contains the default LCPU code including BLE initialization. For users who only need basic BLE functionality, you can add `lcpu_img.c` to your HCPU project and refer to the BLE examples for usage.
 ```c
-SConript:
-    objs.extend(SConscript(os.path.join(SIFLI_SDK, 'example/rom_bin/lcpu_general_ble_img/SConscript'), variant_dir="lcpu_patch", duplicate=0))
+SConscript:
+    objs.extend(SConscript(os.path.join(SIFLI_SDK, 'example/rom_bin/lcpu_general_ble_img/SConscript'), variant_dir=”lcpu_patch”, duplicate=0))
 
 SConstruct:
-    AddLCPU(SIFLI_SDK,rtconfig.CHIP,"../../src/lcpu_img.c")
+    AddLCPU(SIFLI_SDK,rtconfig.CHIP,”../../src/lcpu_img.c”)
 ```
+
+#### 2. Why does Impeller flashing keep failing?
+Possible reasons:
+1. Impeller flashing requires a USB Type-C connection. Make sure you are using the correct interface.
+2. Ensure the device port number is correct. You can check it in Device Manager.
+3. Ensure the device is properly connected. You can verify the connection in Device Manager.
+4. Ensure the correct driver is installed. The driver file is located at `tools/VisualCppRedist_54_Setup.7z`, [C++ Driver](./tools/VisualCppRedist_54_Setup.7z).
+
+#### 3. Why can't the device power on via USB charging after shutting down with the factory firmware (menu_app)?
+The factory firmware (menu_app) enters low-power mode after shutdown. In low-power mode, only a button press can wake the device — USB charging cannot wake it. However, the device can still charge normally while powered off; it just cannot be turned on via USB connection alone.

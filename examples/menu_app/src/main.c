@@ -9,6 +9,7 @@
 #include "ui.h"
 #include "config.h"
 #include "rtc_time.h"
+#include "chip_work_mode.h"
 
 #ifdef USING_BUTTON_LIB
 #include "button.h"
@@ -44,8 +45,11 @@ float temp_data;
 
 init_error_t init_error = 0;
 void key_button_init(void);
-void key_borad_device_enable(void);
+void key_borad_device_ldo_enable(bool enable);
+void low_battery_countdown_alert(void *countdown);
+void low_battery_countdown_dismiss(void *unused);
 static void at_callback(int resp_id, const char *response, int result);
+static void low_battery_monitor_entry(void *param);
 
 /**
  * @brief  Main program
@@ -54,13 +58,25 @@ static void at_callback(int resp_id, const char *response, int result);
  */
 int main(void)
 {
+    rt_thread_mdelay(200);
+
+    if (PM_HIBERNATE_BOOT == SystemPowerOnModeGet())
+        rt_kprintf("boot from hibernate!!!\n");
+
+    enable_ldo(true);
+#ifdef BSP_USING_PM
+    rt_pm_request(PM_SLEEP_MODE_IDLE);
+#endif /* BSP_USING_PM */
+
     device_switch_t *device_switch = get_device_switch();
+#ifdef PKG_USING_SGM41562B
     charger = sgm41562b_init(SGM41562B_I2C_BUS_NAME, SGM41562B_IRQ_PIN);
     if (charger == RT_NULL)
     {
         rt_kprintf("Charger init failed\n");
         init_error |= INIT_CHARGE_ERROR;
     }
+#endif
 
 #ifdef LCD_USING_TFT_CO5300_T_SF32
     ui_init();
@@ -143,7 +159,7 @@ int main(void)
     }
     else
     {
-        key_borad_device_enable();
+        key_borad_device_ldo_enable(true);
     }
 
     if (aw21009_app_init() != RT_EOK)
@@ -195,7 +211,8 @@ int main(void)
         uart_mux_switch_to(UART_MUX_DEVICE_ESP32C6, 115200);
         esp32_at_test(AT_RESP_ID_TEST);
         esp32_at_cwinit(AT_RESP_ID_CWINIT);
-        esp32_at_cwmode(AT_RESP_ID_CWMODE, 3);
+        esp32_at_cwmode(AT_RESP_ID_CWMODE, 1);
+        esp32_at_cwreconncfg(AT_RESP_ID_CWRECONNCFG, 0, 0); // disable auto reconnect
         esp32_at_cwjap(AT_RESP_ID_CWJAP, WIFI_SSID, WIFI_PASSWORD);
     }
 #endif
@@ -204,11 +221,24 @@ int main(void)
     rt_thread_mdelay(100);
     rt_mb_send(get_lvgl_mb(), UI_UPDATE_INIT_ERROR);
 
+    rt_thread_mdelay(1000);
+    rt_thread_t low_bat_tid = rt_thread_create("low_bat",
+                                               low_battery_monitor_entry,
+                                               RT_NULL, 1024,
+                                               RT_THREAD_PRIORITY_MIDDLE, 10);
+    if (low_bat_tid != RT_NULL)
+        rt_thread_startup(low_bat_tid);
+
+#ifdef BSP_USING_PM
+    rt_kprintf("start deepsleep mode\n");
+    rt_pm_release(PM_SLEEP_MODE_IDLE);
+#endif /* BSP_USING_PM */
+
     /**  debug
     rt_uint32_t total, used, max_used;
     while (1)
     {
-        rt_thread_mdelay(10000);
+        rt_thread_mdelay(1000);
         rt_memory_info(&total, &used, &max_used);
         log_d("total memory: %d, used memory: %d, max used memory: %d", total, used, max_used);
     }
@@ -330,24 +360,18 @@ void key_button_init(void)
 #endif
 
 #ifdef PKG_USING_PKG_KEY_BOARD
-void key_borad_device_enable(void)
+void key_borad_device_ldo_enable(bool enable)
 {
     xl9555_pin_mode(XL9555_WIFI_EN_PIN, XL9555_PIN_OUTPUT);
-    xl9555_digital_write(XL9555_WIFI_EN_PIN, 0);
-    rt_thread_mdelay(10);
-    xl9555_digital_write(XL9555_WIFI_EN_PIN, 1);
+    xl9555_digital_write(XL9555_WIFI_EN_PIN, enable);
     rt_thread_mdelay(20);
 
     xl9555_pin_mode(XL9555_GPS_EN_PIN, XL9555_PIN_OUTPUT);
-    xl9555_digital_write(XL9555_GPS_EN_PIN, 0);
-    rt_thread_mdelay(10);
-    xl9555_digital_write(XL9555_GPS_EN_PIN, 1);
+    xl9555_digital_write(XL9555_GPS_EN_PIN, enable);
     rt_thread_mdelay(20);
 
     xl9555_pin_mode(XL9555_KEY_LED_EN_PIN, XL9555_PIN_OUTPUT);
-    xl9555_digital_write(XL9555_KEY_LED_EN_PIN, 0);
-    rt_thread_mdelay(10);
-    xl9555_digital_write(XL9555_KEY_LED_EN_PIN, 1);
+    xl9555_digital_write(XL9555_KEY_LED_EN_PIN, enable);
     rt_thread_mdelay(20);
 }
 
@@ -489,36 +513,97 @@ int32_t get_voltage(void)
 
 uint8_t get_charge_percent(void)
 {
-    int32_t voltage = get_voltage(); // 假设返回的是毫伏值（如3200=3.2V）
+    int32_t voltage = get_voltage();
 
     uint8_t percent = 0;
 
-    // 锂电池典型放电曲线分段计算
     if (voltage >= 4200)
     {
         percent = 100;
     }
     else if (voltage >= 4000)
-    {                                              // 4.0V-4.2V段
-        percent = 80 + (voltage - 4000) * 10 / 25; // 每25mV对应1%
+    {
+        percent = 80 + (voltage - 4000) * 10 / 25;
     }
     else if (voltage >= 3900)
-    { // 3.9V-4.0V段
-        percent = 60 + (voltage - 3900) * 20 / 100;
+    {
+        percent = 58 + (voltage - 3900) * 22 / 100;
     }
     else if (voltage >= 3700)
-    { // 3.7V-3.9V段（最平缓段）
-        percent = 30 + (voltage - 3700) * 30 / 200;
+    {
+        percent = 18 + (voltage - 3700) * 40 / 200;
+    }
+    else if (voltage >= 3600)
+    {
+        percent = 6 + (voltage - 3600) * 12 / 100;
     }
     else if (voltage >= 3500)
-    { // 3.5V-3.7V段
-        percent = 10 + (voltage - 3500) * 20 / 200;
-    }
-    else if (voltage >= 3200)
-    { // 3.2V-3.5V段
-        percent = (voltage - 3200) * 10 / 300;
+    {
+        percent = (voltage - 3500) * 6 / 100;
     }
 
-    // 边界保护
-    return percent > 100 ? 100 : (percent < 0 ? 0 : percent);
+    return percent > 100 ? 100 : percent;
+}
+
+#define LOW_BATTERY_THRESHOLD 3550
+#define LOW_BATTERY_DEBOUNCE_CNT 10
+#define SHUTDOWN_COUNTDOWN_SEC 5
+
+static void low_battery_monitor_entry(void *param)
+{
+    int low_cnt = 0;
+    int countdown;
+    int cancelled;
+    int need_recovery = 0;
+
+    while (1)
+    {
+        while (1)
+        {
+            rt_thread_mdelay(5000);
+
+            if (get_voltage() < LOW_BATTERY_THRESHOLD)
+            {
+                if (!need_recovery)
+                    low_cnt++;
+                if (low_cnt >= LOW_BATTERY_DEBOUNCE_CNT)
+                    break;
+            }
+            else
+            {
+                low_cnt = 0;
+                need_recovery = 0;
+            }
+        }
+
+        log_d("low battery, starting shutdown countdown");
+
+        cancelled = 0;
+        lv_async_call(low_battery_countdown_reset, NULL);
+        for (countdown = SHUTDOWN_COUNTDOWN_SEC; countdown > 0; countdown--)
+        {
+            rt_mb_send(get_lvgl_mb(), UI_UPDATE_LOW_BATTERY_COUNTDOWN);
+            lv_async_call(low_battery_countdown_alert, (void *)(rt_uint32_t)countdown);
+
+#ifdef PKG_USING_SGM41562B
+            int st = sgm41562b_get_charge_status(charger);
+            if (st == CHG_STAT_PRE_CHARGE || st == CHG_STAT_FAST_CHARGE)
+            {
+                log_d("charger plugged in, cancel shutdown");
+                cancelled = 1;
+                break;
+            }
+#endif
+            rt_thread_mdelay(1000);
+        }
+
+        if (!cancelled)
+        {
+            into_hibernate();
+        }
+
+        lv_async_call(low_battery_countdown_dismiss, NULL);
+        low_cnt = 0;
+        need_recovery = 0;
+    }
 }

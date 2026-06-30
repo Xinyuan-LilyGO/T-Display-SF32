@@ -73,6 +73,22 @@ rt_err_t sdcard_init(void)
     return RT_EOK;
 }
 
+rt_err_t sdcard_deinit(void)
+{
+    if(dfs_unmount("/") != 0)
+    {
+        LOG_E("Failed to unmount SD card filesystem");
+        return -RT_ERROR;
+    }
+    sd_card_ready = false;
+    return RT_EOK;
+}
+
+bool sd_card_is_ready(void)
+{
+    return sd_card_ready;
+}
+
 bool list_files(char *path, int depth)
 {
     file_list_head = NULL;

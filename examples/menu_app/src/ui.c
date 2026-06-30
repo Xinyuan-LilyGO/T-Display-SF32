@@ -108,7 +108,7 @@ static const app_info app_list[APP_SIZE] = {
     {&imu_icon, "Sensor", {"Chip:", "Dof:", "Device", "Protocol"}, {"BHI260AP/BME280", "6-Dof/Hygrothermograph", "Motor/Infrared", "I2C"}, 4, APP_SENSOR},
     {&gps_icon, "GPS", {"Chip:", "Protocol"}, {"L76K", "Uart"}, 2, APP_GPS},
     {&wifi_icon, "WIFI", {"Chip:", "Protocol"}, {"ESP32C6", "Uart"}, 2, APP_WIFI},
-    {&battery_icon, "CHARGE", {"Chip:", "Uvlo:", "Ibat:", "Protocol:"}, {"Sgm41562b", "3.0V", "200mA/400mA", "I2C"}, 4, APP_CHARGE},
+    {&battery_icon, "CHARGE", {"Chip:", "Uvlo:", "Ibat:", "Protocol:"}, {"Sgm41562b", "3.0V", "350mA/450mA", "I2C"}, 4, APP_CHARGE},
     {&weather_icon, "WEATHER", {"Use:", "City:", "Country:", "Timezone:"}, {"Connect BT and Open Pan", "ShenZhen", "China", "+8"}, 4, APP_WEATHER},
     {&record_icon, "AUDIO", {"Function:"}, {"Record of audio and play it."}, 1, APP_AUDIO},
     {&file_icon, "FILE", {"Function:", "Protocol:"}, {"SD card file directory", "SPI"}, 2, APP_FILE},
@@ -402,6 +402,7 @@ static void lvgl_task_entry(void *parameter)
     {
 #ifdef PKG_USING_PKG_KEY_BOARD
         rt_device_t lcd_device;
+        static uint8_t set_brightness;
         lvgl_key_mq = key_board_get_mq();
         if (lvgl_key_mq)
         {
@@ -648,6 +649,69 @@ void volume_progress_bar(void *data)
     /* 1.8 秒后自动消失 */
     overall_ui.vol_timer = lv_timer_create(vol_popup_del_cb, 1800, NULL);
     lv_timer_set_repeat_count(overall_ui.vol_timer, 1);
+}
+
+static lv_obj_t *low_bat_panel = NULL;
+static int low_bat_dismissed = 0;
+
+void low_battery_countdown_alert(void *countdown)
+{
+    if (low_bat_dismissed)
+        return;
+
+    int sec = (int)(rt_uint32_t)countdown;
+
+    if (low_bat_panel == NULL)
+    {
+        lv_obj_t *scr = lv_scr_act();
+
+        low_bat_panel = lv_obj_create(scr);
+        lv_obj_set_size(low_bat_panel, 440, 52);
+        lv_obj_align(low_bat_panel, LV_ALIGN_TOP_MID, 0, 70);
+        lv_obj_set_style_bg_opa(low_bat_panel, LV_OPA_20, 0);
+        lv_obj_set_style_bg_color(low_bat_panel, lv_color_hex(LV_COLOR_THEME_BLACK), 0);
+        lv_obj_set_style_border_width(low_bat_panel, 0, 0);
+        lv_obj_set_style_radius(low_bat_panel, 12, 0);
+        lv_obj_set_style_shadow_width(low_bat_panel, 10, 0);
+        lv_obj_set_style_pad_all(low_bat_panel, 0, 0);
+        lv_obj_clear_flag(low_bat_panel, LV_OBJ_FLAG_SCROLLABLE);
+
+        lv_obj_t *icon = lv_label_create(low_bat_panel);
+        lv_label_set_text(icon, LV_SYMBOL_WARNING);
+        lv_obj_set_style_text_color(icon, lv_color_hex(LV_COLOR_WARM_RED), 0);
+        lv_obj_set_style_text_font(icon, &lv_font_montserrat_24, 0);
+        lv_obj_align(icon, LV_ALIGN_LEFT_MID, 30, 0);
+
+        lv_obj_t *text = lv_label_create(low_bat_panel);
+        lv_label_set_text_fmt(text, "Battery low, shutdown in %ds", sec);
+        lv_obj_set_style_text_color(text, lv_color_hex(LV_COLOR_THEME_WIHTE), 0);
+        lv_obj_set_style_text_font(text, &lv_font_montserrat_20, 0);
+        lv_obj_set_style_text_align(text, LV_TEXT_ALIGN_CENTER, 0);
+        lv_obj_align(text, LV_ALIGN_CENTER, 0, 0);
+
+        lv_obj_set_user_data(low_bat_panel, text);
+    }
+    else
+    {
+        lv_obj_t *text = (lv_obj_t *)lv_obj_get_user_data(low_bat_panel);
+        lv_label_set_text_fmt(text, "Battery low, shutdown in %ds", sec);
+    }
+}
+
+void low_battery_countdown_dismiss(void *unused)
+{
+    low_bat_dismissed = 1;
+    if (low_bat_panel != NULL)
+    {
+        lv_obj_set_style_bg_opa(low_bat_panel, LV_OPA_0, 0);
+        lv_obj_del(low_bat_panel);
+        low_bat_panel = NULL;
+    }
+}
+
+void low_battery_countdown_reset(void *unused)
+{
+    low_bat_dismissed = 0;
 }
 
 /**********start page **********/
@@ -933,7 +997,6 @@ static void app_icon_ui_init(struct Page *page)
     lv_obj_set_style_text_opa(logo_label, LV_OPA_80, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(logo_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(logo_label, &lv_font_montserrat_30, LV_PART_MAIN | LV_STATE_DEFAULT);
-
 }
 
 static void home_page_on_create(struct Page *page)
@@ -943,17 +1006,17 @@ static void home_page_on_create(struct Page *page)
     lv_obj_set_scrollbar_mode(page->root, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_scroll_dir(page->root, LV_DIR_NONE);
 
-    lv_obj_t* screen_app_img_3 = lv_image_create(page->root);
+    lv_obj_t *screen_app_img_3 = lv_image_create(page->root);
     lv_obj_align(screen_app_img_3, LV_ALIGN_CENTER, 0, 0);
     lv_obj_set_size(screen_app_img_3, 480, 480);
     lv_obj_add_flag(screen_app_img_3, LV_OBJ_FLAG_CLICKABLE);
     lv_image_set_src(screen_app_img_3, &dark_bg2);
-    lv_image_set_pivot(screen_app_img_3, 50,50);
+    lv_image_set_pivot(screen_app_img_3, 50, 50);
     lv_image_set_rotation(screen_app_img_3, 0);
 
-    //Write style for screen_app_img_3, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
-    lv_obj_set_style_image_recolor_opa(screen_app_img_3, 0, LV_PART_MAIN|LV_STATE_DEFAULT);
-    lv_obj_set_style_image_opa(screen_app_img_3, 255, LV_PART_MAIN|LV_STATE_DEFAULT);
+    // Write style for screen_app_img_3, Part: LV_PART_MAIN, State: LV_STATE_DEFAULT.
+    lv_obj_set_style_image_recolor_opa(screen_app_img_3, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_image_opa(screen_app_img_3, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     status_bar_init(page->root);
     app_icon_ui_init(page);
@@ -1006,6 +1069,7 @@ static void home_timer_callback(lv_timer_t *timer)
                 lv_obj_set_style_text_color(home_ui.status_bar_battery_icon, lv_color_hex(LV_COLOR_WARM_RED), LV_PART_MAIN | LV_STATE_DEFAULT);
                 lv_label_set_text(home_ui.status_bar_battery_icon, "" LV_SYMBOL_BATTERY_EMPTY "");
             }
+#ifdef PKG_USING_SGM41562B
             sgm41562b_handle_t charege_handle = sgm41562b_get_handle();
             if ((CHG_STAT_PRE_CHARGE == sgm41562b_get_charge_status(charege_handle)) || (CHG_STAT_FAST_CHARGE == sgm41562b_get_charge_status(charege_handle)))
             {
@@ -1017,6 +1081,7 @@ static void home_timer_callback(lv_timer_t *timer)
                 lv_obj_set_style_text_color(home_ui.status_bar_battery_icon, lv_color_hex(LV_COLOR_THEME_WIHTE), LV_PART_MAIN | LV_STATE_DEFAULT);
                 lv_obj_set_style_text_color(home_ui.status_bar_battery_label, lv_color_hex(LV_COLOR_THEME_WIHTE), LV_PART_MAIN | LV_STATE_DEFAULT);
             }
+#endif
         }
     }
 
@@ -1608,7 +1673,6 @@ static void music_page_on_create(struct Page *page)
     lv_group_add_obj(page->group, music_last_btn);
     lv_group_add_obj(page->group, music_ui.music_pause_btn);
     lv_group_add_obj(page->group, music_next_btn);
-
 }
 
 static void music_event_cb(lv_event_t *e)
@@ -2980,9 +3044,6 @@ static void charge_page_on_create(struct Page *page)
     lv_obj_set_style_text_opa(charge_ui.batter_voltage_mv_label, LV_OPA_70, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_label_set_long_mode(charge_ui.batter_voltage_mv_label, LV_LABEL_LONG_WRAP);
 
-    sgm41562b_handle_t charger;
-    charger = sgm41562b_get_handle();
-
     charge_ui.batter_current_ma_btn = lv_button_create(page->root);
     lv_obj_set_size(charge_ui.batter_current_ma_btn, 100, 30);
     lv_obj_align(charge_ui.batter_current_ma_btn, LV_ALIGN_TOP_MID, 0, 220);
@@ -2992,7 +3053,12 @@ static void charge_page_on_create(struct Page *page)
     lv_obj_add_event_cb(charge_ui.batter_current_ma_btn, charge_event_cb, LV_EVENT_CLICKED, (void *)CHARGE_EVENT_CURRENT);
     lv_group_add_obj(page->group, charge_ui.batter_current_ma_btn);
     lv_obj_t *current_label = lv_label_create(charge_ui.batter_current_ma_btn);
+
+#ifdef PKG_USING_SGM41562B
+    sgm41562b_handle_t charger;
+    charger = sgm41562b_get_handle();
     lv_label_set_text_fmt(current_label, "%d mA", sgm41562b_get_charge_current(charger));
+#endif
     lv_obj_set_style_text_color(current_label, lv_color_hex(LV_COLOR_THEME_BLACK), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_font(current_label, &lv_font_montserrat_16, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_center(current_label);
@@ -3046,15 +3112,15 @@ static void charge_page_on_create(struct Page *page)
 
 static void charge_timer_callback(lv_timer_t *timer)
 {
-    sgm41562b_handle_t charger;
-    charger = sgm41562b_get_handle();
     voltage = get_voltage();
     voltage_percent = get_charge_percent();
 
     lv_arc_set_value(charge_ui.charge_arc, voltage_percent);
     lv_label_set_text_fmt(charge_ui.batter_voltage_percentage_label, "%d%%", voltage_percent);
     lv_label_set_text_fmt(charge_ui.batter_voltage_mv_label, "%d mV", voltage);
-
+#ifdef PKG_USING_SGM41562B
+    sgm41562b_handle_t charger;
+    charger = sgm41562b_get_handle();
     lv_label_set_text(charge_ui.charge_status_label, sgm41562b_get_charge_status_str(charger));
     lv_label_set_text_fmt(charge_ui.batter_status_label[0], "%d mV", sgm41562b_get_charge_vlotage(charger));
     lv_label_set_text_fmt(charge_ui.batter_status_label[1], "%d mA", sgm41562b_get_charge_current(charger));
@@ -3063,6 +3129,7 @@ static void charge_timer_callback(lv_timer_t *timer)
     lv_label_set_text(charge_ui.batter_status_label[4], sgm41562b_get_vin_fault_str(charger));
     lv_label_set_text(charge_ui.batter_status_label[5], sgm41562b_get_battery_fault_str(charger));
     lv_label_set_text(charge_ui.batter_status_label[6], sgm41562b_get_ntc_fault_str(charger));
+#endif
 }
 
 static void charge_event_cb(lv_event_t *e)
@@ -3070,6 +3137,7 @@ static void charge_event_cb(lv_event_t *e)
     lv_event_code_t code = lv_event_get_code(e);
     lv_obj_t *target_obj = lv_event_get_target(e);
     int event_id = (int)lv_event_get_user_data(e);
+#ifdef PKG_USING_SGM41562B
     sgm41562b_handle_t charge_handle = sgm41562b_get_handle();
     log_d("charge_event_cb, code: %d, event_id: %d\n", code, event_id);
     static bool current_ma = false;
@@ -3083,19 +3151,20 @@ static void charge_event_cb(lv_event_t *e)
             lv_obj_t *current_label = lv_obj_get_child(target_obj, 0);
             if (current_ma)
             {
-                lv_label_set_text(current_label, "400 mA");
-                sgm41562b_set_charge_current(charge_handle, 400); /* 400mA */
+                lv_label_set_text(current_label, "450 mA");
+                sgm41562b_set_charge_current(charge_handle, 450); /* 400mA */
             }
             else
             {
-                lv_label_set_text(current_label, "200 mA");
-                sgm41562b_set_charge_current(charge_handle, 200); /* 200mA */
+                lv_label_set_text(current_label, "350 mA");
+                sgm41562b_set_charge_current(charge_handle, 350); /* 200mA */
             }
             break;
         }
 
         break;
     }
+#endif
 }
 
 /**********weather page **********/
@@ -3310,6 +3379,10 @@ static void weather_event_cb(lv_event_t *e)
 /**********aduio page **********/
 static void aduio_page_on_create(struct Page *page)
 {
+    if (!sd_card_is_ready())
+    {
+        sdcard_init();
+    }
     LOG_D("aduio_page_on_create\n");
 
     lv_obj_t *page_tile = lv_label_create(page->root);
@@ -3562,6 +3635,11 @@ static void get_parent_path(const char *path, char *parent_path, size_t size)
 
 static void file_page_on_create(struct Page *page)
 {
+    if (!sd_card_is_ready())
+    {
+        sdcard_init();
+    }
+
     LOG_D("file_page_on_create\n");
     strcpy(current_dir, "/");
 
@@ -4217,8 +4295,10 @@ static void ship_mode_confirm_dialog(lv_event_t *e)
     lv_event_code_t code = lv_event_get_code(e);
     int event_type = (int)lv_event_get_user_data(e);
     lv_obj_t *target_obj = lv_event_get_target(e);
+#ifdef PKG_USING_SGM41562B
     sgm41562b_handle_t charger;
     charger = sgm41562b_get_handle();
+#endif
     switch (code)
     {
     case LV_EVENT_CLICKED:
@@ -4226,11 +4306,16 @@ static void ship_mode_confirm_dialog(lv_event_t *e)
         {
         case SYSTEM_EVENT_SHOTDOWN:
             log_d("Shotdowning...\n");
-            into_shotdown();
+#ifdef PKG_USING_SGM41562B
+            sgm41562b_set_switch_mode(charger, true);
+#endif
+            into_hibernate();
             break;
         case SYSTEM_EVENT_SHIP_MODE:
             log_d("into Ship Mode...\n");
+#ifdef PKG_USING_SGM41562B
             sgm41562b_enter_shipping_mode(charger);
+#endif
             break;
         case SYSTEM_EVENT_RESTART:
             log_d("Restarting...\n");
@@ -4596,11 +4681,19 @@ static void page_on_leave(Page *page)
         break;
 
     case PAGE_AUDIO:
+        if (sd_card_is_ready())
+        {
+            sdcard_deinit();
+        }
         break;
 
     case PAGE_FILE:
         file_ui.file_list = NULL;
         file_ui.file_item = NULL;
+        if (sd_card_is_ready())
+        {
+            sdcard_deinit();
+        }
         break;
 
     case PAGE_SYSTEM:
