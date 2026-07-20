@@ -146,6 +146,7 @@ extern "C"
         SYSTEM_EVENT_KEY_LED,
         SYSTEM_EVENT_BRIGHTNESS,
         SYSTEM_EVENT_VOLUME,
+        SYSTEM_EVENT_MOTOR,
         SYSTEM_EVENT_SHOTDOWN,
         SYSTEM_EVENT_SHIP_MODE,
         SYSTEM_EVENT_RESTART,
@@ -317,6 +318,8 @@ extern "C"
         lv_obj_t *gps_lon;
         lv_obj_t *gps_spd;
         lv_obj_t *gps_crs;
+        lv_obj_t *gps_pos_time;
+        lv_obj_t *gps_rx_bytes;
         lv_obj_t *gps_alt;
         lv_obj_t *gps_sats;
         lv_obj_t *gps_dop;
@@ -389,6 +392,7 @@ extern "C"
         lv_obj_t *key_led_btn;
         lv_obj_t *brightness_slider;
         lv_obj_t *volume_slider;
+        lv_obj_t *motor_slider;
         lv_obj_t *shotdown_btn;
         lv_obj_t *restart_btn;
         lv_obj_t *ship_mode_btn;

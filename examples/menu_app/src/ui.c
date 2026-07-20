@@ -2711,14 +2711,18 @@ static void gps_page_on_create(struct Page *page)
     lv_obj_set_style_line_opa(screen_gps_line_1, LV_OPA_80, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_line_rounded(screen_gps_line_1, true, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    lv_obj_t *box = gps_create_box(cont, "LAT", 60, 100);
+    lv_obj_t *box = gps_create_box(cont, "LAT", 20, 100);
     gps_ui.gps_lat = lv_obj_get_child(box, 1);
-    box = gps_create_box(cont, "LON", 280, 100);
+    box = gps_create_box(cont, "LON", 170, 100);
     gps_ui.gps_lon = lv_obj_get_child(box, 1);
-    box = gps_create_box(cont, "SPD", 60, 200);
+    box = gps_create_box(cont, "BYTES", 320, 100);
+    gps_ui.gps_rx_bytes = lv_obj_get_child(box, 1);
+    box = gps_create_box(cont, "SPD", 20, 200);
     gps_ui.gps_spd = lv_obj_get_child(box, 1);
-    box = gps_create_box(cont, "CRS", 280, 200);
+    box = gps_create_box(cont, "CRS", 170, 200);
     gps_ui.gps_crs = lv_obj_get_child(box, 1);
+    box = gps_create_box(cont, "POS_TIME", 320, 200);
+    gps_ui.gps_pos_time = lv_obj_get_child(box, 1);
 
     lv_obj_t *screen_gps_line_2 = lv_line_create(cont);
     lv_obj_set_pos(screen_gps_line_2, 10, 290);
@@ -2772,12 +2776,18 @@ static lv_obj_t *gps_create_box(lv_obj_t *parent, const char *title, int x, int 
 
 static void gps_timer_callback(lv_timer_t *timer)
 {
+    if (uart_mux_get_current_device() != UART_MUX_DEVICE_GPS)
+    {
+        uart_mux_switch_to(UART_MUX_DEVICE_GPS, 115200);
+    }
+
 #if defined(PKG_USING_L76K)
+    static uint16_t gps_update_time = 0;
     GPSInfo gps_info;
     if (l76k_is_fixed())
     {
-        device_switch.gps_enable = true;
         l76k_get_gps_info(&gps_info);
+        device_switch.gps_enable = true;
         log_d("Time: %04d-%02d-%02d %02d:%02d:%02d UTC\n", gps_info.time.year, gps_info.time.month, gps_info.time.day,
               gps_info.time.hour, gps_info.time.minute, gps_info.time.second);
         log_d("Latitude: %f, Longitude: %f\n", gps_info.latitude, gps_info.longitude);
@@ -2799,9 +2809,14 @@ static void gps_timer_callback(lv_timer_t *timer)
     }
     else
     {
+        gps_update_time++; // update gps data every 1s
         device_switch.gps_enable = false;
-        log_d("GPS is not fixed\n");
+        log_d("GPS finding %d\n", gps_update_time);
     }
+
+    lv_label_set_text_fmt(gps_ui.gps_pos_time, "%d", gps_update_time);
+    lv_label_set_text_fmt(gps_ui.gps_rx_bytes, "%d", l76k_get_rx_bytes());
+
 #endif
 }
 
@@ -2875,6 +2890,11 @@ static void wifi_page_on_create(struct Page *page)
 
 static void wifi_event_cb(lv_event_t *e)
 {
+    if (uart_mux_get_current_device() != UART_MUX_DEVICE_ESP32C6)
+    {
+        uart_mux_switch_to(UART_MUX_DEVICE_ESP32C6, 115200);
+    }
+
     lv_event_code_t code = lv_event_get_code(e);
     wifi_event_t event_id = (wifi_event_t)lv_event_get_user_data(e);
     if (code == LV_EVENT_CLICKED)
@@ -4180,6 +4200,57 @@ static void system_page_on_create(struct Page *page)
     lv_obj_add_event_cb(system_ui.volume_slider, system_event_cb, LV_EVENT_VALUE_CHANGED, (void *)(uintptr_t)ui_event_t);
     lv_group_add_obj(page->group, system_ui.volume_slider);
 
+    /* Row: Motor */
+    lv_obj_t *motor_row = lv_obj_create(card1);
+    lv_obj_set_size(motor_row, 424, 48);
+    lv_obj_set_pos(motor_row, 8, 268);
+    lv_obj_set_style_bg_opa(motor_row, LV_OPA_10, LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(motor_row, lv_color_hex(LV_COLOR_THEME_WIHTE), LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(motor_row, 12, 0);
+    lv_obj_set_style_border_width(motor_row, 0, 0);
+    lv_obj_set_style_shadow_width(motor_row, 0, 0);
+    lv_obj_set_style_pad_all(motor_row, 0, 0);
+    lv_obj_clear_flag(motor_row, LV_OBJ_FLAG_SCROLLABLE);
+
+    lv_obj_t *motor_icon = lv_label_create(motor_row);
+    lv_label_set_text(motor_icon, LV_SYMBOL_CHARGE);
+    lv_obj_set_style_text_color(motor_icon, lv_color_hex(LV_COLOR_THEME_WIHTE), 0);
+    lv_obj_set_style_text_font(motor_icon, &lv_font_montserrat_24, 0);
+    lv_obj_align(motor_icon, LV_ALIGN_LEFT_MID, 14, 0);
+
+    lv_obj_t *motor_name = lv_label_create(motor_row);
+    lv_label_set_text(motor_name, "Motor");
+    lv_obj_set_style_text_color(motor_name, lv_color_hex(LV_COLOR_THEME_WIHTE), 0);
+    lv_obj_set_style_text_font(motor_name, &lv_font_montserrat_24, 0);
+    lv_obj_align(motor_name, LV_ALIGN_LEFT_MID, 52, 0);
+
+    int motor_gain = aw86224_get_gain();
+    system_ui.motor_slider = lv_slider_create(motor_row);
+    lv_obj_set_size(system_ui.motor_slider, 160, 32);
+    lv_obj_align(system_ui.motor_slider, LV_ALIGN_RIGHT_MID, -60, 0);
+    lv_slider_set_range(system_ui.motor_slider, 0, 255);
+    lv_slider_set_value(system_ui.motor_slider, motor_gain, LV_ANIM_OFF);
+    lv_obj_set_style_radius(system_ui.motor_slider, 16, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(system_ui.motor_slider, LV_OPA_30, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(system_ui.motor_slider, lv_color_hex(LV_COLOR_THEME_WIHTE), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_shadow_width(system_ui.motor_slider, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_outline_width(system_ui.motor_slider, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(system_ui.motor_slider, 255, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(system_ui.motor_slider, lv_color_hex(LV_COLOR_BTN_BLUE), LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(system_ui.motor_slider, 16, LV_PART_INDICATOR | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(system_ui.motor_slider, 0, LV_PART_KNOB | LV_STATE_DEFAULT);
+    lv_obj_set_style_radius(system_ui.motor_slider, 0, LV_PART_KNOB | LV_STATE_DEFAULT);
+
+    lv_obj_t *motor_gain_val = lv_label_create(motor_row);
+    lv_label_set_text_fmt(motor_gain_val, "%d", motor_gain);
+    lv_obj_set_style_text_color(motor_gain_val, lv_color_hex(LV_COLOR_THEME_WIHTE), 0);
+    lv_obj_set_style_text_font(motor_gain_val, &lv_font_montserrat_20, 0);
+    lv_obj_align(motor_gain_val, LV_ALIGN_RIGHT_MID, -12, 0);
+
+    ui_event_t = SYSTEM_EVENT_MOTOR;
+    lv_obj_add_event_cb(system_ui.motor_slider, system_event_cb, LV_EVENT_VALUE_CHANGED, (void *)(uintptr_t)ui_event_t);
+    lv_group_add_obj(page->group, system_ui.motor_slider);
+
     /* ─── Card 2: System Actions ─── */
     lv_obj_t *card2 = lv_obj_create(cont);
     lv_obj_set_size(card2, 440, 168);
@@ -4546,6 +4617,18 @@ static void system_event_cb(lv_event_t *e)
             if (val_label)
             {
                 lv_label_set_text_fmt(val_label, "%d", (int)val);
+            }
+            break;
+        }
+        case SYSTEM_EVENT_MOTOR:
+        {
+            int32_t motor_gain = lv_slider_get_value(target_obj);
+            aw86224_set_gain((uint8_t)motor_gain);            
+            lv_obj_t *parent = lv_obj_get_parent(target_obj);
+            lv_obj_t *motor_gain_val = lv_obj_get_child(parent, -1);
+            if (motor_gain_val)
+            {
+                lv_label_set_text_fmt(motor_gain_val, "%d", (int)motor_gain);
             }
             break;
         }
