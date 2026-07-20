@@ -22,19 +22,20 @@ The T-SF32-Display development board is a platform based on SiFli's latest ultra
 | Operating Voltage  | 3.2V-4.7V                                            |
 
 ## 2. Peripheral Modules
-| Module            | Model             | Description                                                           |
-| ----------------- | ----------------- | --------------------------------------------------------------------- |
-| Bluetooth         | -                 | Dual-mode Bluetooth 5.3, BLE Audio, RX sensitivity -100dBm (1Mbps)    |
-| Audio             | -                 | 24-bit audio ADC/DAC, Bluetooth audio streaming                       |
-| LoRa              | SX1262            | 433/868/915MHz, low power, high RX sensitivity                        |
-| TF Card           | MicroSD           | Supports SDHC/SDXC                                                    |
-| IMU               | BHI260AP          | 3-axis accelerometer, gyroscope, magnetometer, low-power mode         |
-| Charge Management | SGM41562B         | USB PD fast charging, battery management, multiple charging protocols |
-| Keyboard          | TAC8418 + AW21009 | 8x8 matrix keyboard, low-power design                                 |
-| GPS               | L76K              | Supports NMEA, CASIC protocols, high-precision positioning            |
-| Temp & Humidity   | BME280            |                                                                       |
-| IR Transmitter    | VSMY14940         |                                                                       |
-| Vibration Motor   | AW86224           |                                                                       |
+| Module            | Model             | Description                                                                    |
+| ----------------- | ----------------- | ------------------------------------------------------------------------------ |
+| Bluetooth         | -                 | Dual-mode Bluetooth 5.3, BLE Audio, RX sensitivity -100dBm (1Mbps)             |
+| Audio             | -                 | 24-bit audio ADC/DAC, Bluetooth audio streaming                                |
+| LoRa              | SX1262            | 433/868/915MHz, low power, high RX sensitivity                                 |
+| TF Card           | MicroSD           | Supports SDHC/SDXC                                                             |
+| IMU               | BHI260AP          | 3-axis accelerometer, gyroscope, magnetometer, low-power mode                  |
+| Charge Management | SGM41562B         | USB PD fast charging, battery management, multiple charging protocols          |
+| Keyboard          | TAC8418 + AW21009 | 8x8 matrix keyboard, low-power design                                          |
+| GPS               | L76K              | Supports NMEA, CASIC protocols, high-precision positioning                     |
+| WIFI&BLUE moulde  | ESP32C6           | Serial port connection, using ESP32C6 AT firmware, and sharing UART2 with L76K |
+| Temp & Humidity   | BME280            |                                                                                |
+| IR Transmitter    | VSMY14940         |                                                                                |
+| Vibration Motor   | AW86224           |                                                                                |
 
 ## 3. Storage
 | Module | Model |
