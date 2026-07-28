@@ -8,6 +8,10 @@ To update the SDK version, please refer to the update_sdk_install.md document: [
 # Overview
 The T-SF32-Display development board is a platform based on SiFli's latest ultra-low-power AIoT MCU chip SF32LB52X. It is designed for smart wearables, smart home, industrial sensing, and IoT applications, featuring a rich set of peripheral interfaces and sensors.
 
+# Notes  
+- The startup voltage of the SF32LB52X chip must be greater than 3.5V, so please ensure the battery voltage is above 3.5V; otherwise, it will not start properly.
+- When programming your own firmware, implement battery voltage detection and low-battery shutdown functionality in advance, otherwise over-discharge of the battery may easily occur.
+
 # Hardware Features
 ## 1. MCU
 |                    | SF32LB52X                                            |
