@@ -49,10 +49,10 @@ The T-SF32-Display development board is a platform based on SiFli's latest ultra
 | PSRAM  | 8MB   |
 
 ## 4. Display
-| Module        | Model    |
-| ------------- | -------- |
-| AMOLED(2.16”) | (CO5300) |
-| Touch Screen  | CST9220  |
+| Module        | Model   |
+| ------------- | ------- |
+| AMOLED(2.16”) | CO5300  |
+| Touch Screen  | CST9220 |
 
 ## 5. Interfaces
 | Interface | Type    | Description |
@@ -66,50 +66,54 @@ The T-SF32-Display development board is a platform based on SiFli's latest ultra
 | JTAG/SWD  | -       |             |
 
 # T-SF32 Pin_Map
-| Pin_Map        | fun          | describe                  |
-| -------------- | ------------ | ------------------------- |
-| PA0            | TP_RST       |                           |
-| PA1            | TP_INT       |                           |
-| PA2            | LCD_TE       |                           |
-| PA3            | LCD_CS       |                           |
-| PA4            | LCD_CLK      |                           |
-| PA5            | LCD_D0       |                           |
-| PA6            | LCD_D1       |                           |
-| PA7            | LCD_D2       |                           |
-| PA8            | LCD_D3       |                           |
-| PA9            | LCD_RST      |                           |
-| PA10           | L76K_PPS     |                           |
-| PA11           | TCA8418_IRA  | key board interrupt       |
-| PA12           | FLASH_CS     |                           |
-| PA13           | FLASH_MOSI   |                           |
-| PA14           | FLASH_WP     |                           |
-| PA15           | FLASH_MISO   |                           |
-| PA16           | FLASH_SCK    |                           |
-| PA17           | FLASH_HOLD   |                           |
-| PA18           | UART_RXD     |                           |
-| PA19           | UART_TXD     |                           |
-| PA20           | NS4150B_CTRL | Audio amplifier switch    |
-| PA22           | 32K_XI       | Crystal oscillator input  |
-| PA23           | 32K_XO       | Crystal oscillator output |
-| PA24           | SPI1_MOSI    |                           |
-| PA25           | SPI1_MISO    |                           |
-| PA26           | LORA_EN      |                           |
-| PA27           | BHI260AP_IRQ |                           |
-| PA28           | SPI1_SCK     |                           |
-| PA29           | LORA_CS      | SPI1                      |
-| PA30           | LORA_IRQ     |                           |
-| PA31           | LORA_BUSY    |                           |
-| PA32           | LROA_RST     |                           |
-| PA33\PA34\PA35 | BUTTON       |                           |
-| PA36           | IR_PWM       | infrared emission         |
-| PA37           | I2C1_SDA     |                           |
-| PA38           | I2C1_SCL     |                           |
-| PA39           | UART2_RXD    |                           |
-| PA40           | UART2_TXD    |                           |
-| PA41           | LDO_3V3_EN   |                           |
-| PA42           |              | reserve                   |
-| PA43           | SD_CS        | SPI1                      |
-| PA44           | VCI_EN       | LCD                       |
+| Pin_Map | fun          | describe                                                                       |
+| ------- | ------------ | ------------------------------------------------------------------------------ |
+| PA0     | TP_RST       |                                                                                |
+| PA1     | TP_INT       |                                                                                |
+| PA2     | LCD_TE       |                                                                                |
+| PA3     | LCD_CS       |                                                                                |
+| PA4     | LCD_CLK      |                                                                                |
+| PA5     | LCD_D0       |                                                                                |
+| PA6     | LCD_D1       |                                                                                |
+| PA7     | LCD_D2       |                                                                                |
+| PA8     | LCD_D3       |                                                                                |
+| PA9     | LCD_RST      |                                                                                |
+| PA10    | L76K_PPS     |                                                                                |
+| PA11    | TCA8418_IRA  | key board interrupt                                                            |
+| PA12    | FLASH_CS     |                                                                                |
+| PA13    | FLASH_MOSI   |                                                                                |
+| PA14    | FLASH_WP     |                                                                                |
+| PA15    | FLASH_MISO   |                                                                                |
+| PA16    | FLASH_SCK    |                                                                                |
+| PA17    | FLASH_HOLD   |                                                                                |
+| PA18    | UART_RXD     |                                                                                |
+| PA19    | UART_TXD     |                                                                                |
+| PA20    | NS4150B_CTRL | Audio amplifier switch                                                         |
+| PA22    | 32K_XI       | Crystal oscillator input                                                       |
+| PA23    | 32K_XO       | Crystal oscillator output                                                      |
+| PA24    | SPI1_MOSI    |                                                                                |
+| PA25    | SPI1_MISO    |                                                                                |
+| PA26    | LORA_EN      |                                                                                |
+| PA27    | BHI260AP_IRQ |                                                                                |
+| PA28    | SPI1_SCK     |                                                                                |
+| PA29    | LORA_CS      | SPI1                                                                           |
+| PA30    | LORA_IRQ     |                                                                                |
+| PA31    | LORA_BUSY    |                                                                                |
+| PA32    | LROA_RST     |                                                                                |
+| PA33    | BUTTON       | The letter 'C' key                                                             |
+| PA34    | BUTTON       | The letter 'A' key                                                             |
+| PA35    | BUTTON       | The letter 'B' key                                                             |
+| PA36    | IR_PWM       | infrared emission                                                              |
+| PA37    | I2C1_SDA     | CST9220 & BHI260AP & SGM41562B & TAC8418 & AW21009 & BME280 & AW86224 & XL9555 |
+| PA38    | I2C1_SCL     | CST9220 & BHI260AP & SGM41562B & TAC8418 & AW21009 & BME280 & AW86224 & XL9555 |
+| PA39    | UART2_RXD    | GSP & ESP32C6                                                                  |
+| PA40    | UART2_TXD    | GSP & ESP32C6                                                                  |
+| PA41    | LDO_3V3_EN   |                                                                                |
+| PA42    |              | reserve                                                                        |
+| PA43    | SD_CS        | SPI1                                                                           |
+| PA44    | VCI_EN       | LCD                                                                            |
+
+- The letter 'D' key is SGM41562B interrupt pin,Starting from the shipping mode.
 
 # T-SF32-Display Power Consumption
 Please refer to the [Power Consumption Test Report](./lowpowertest/T-SF32-Display-power.pdf), located at “./lowpowertest/T-SF32-Display-power.pdf”.
