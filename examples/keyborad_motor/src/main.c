@@ -24,15 +24,21 @@ int main(void)
         LOG_D("aw86224_init failed\n");
     }
 
-    aw86224_set_gain(0x80);
-    
+    aw86224_set_gain(0xff);
+
     while (1)
     {
-        log_d("play short\n");
-        aw86224_play_ram_short(1, RT_TRUE);
-        rt_thread_mdelay(2000);
-        log_d("play long\n");
-        aw86224_play_ram_long(4, 3, RT_TRUE);
-        rt_thread_mdelay(2000);
+        log_d("play ram 1 long\n");
+        aw86224_play_ram_long(1, 14,RT_TRUE);
+        rt_thread_mdelay(1000);
+        log_d("play ram 2 long\n");
+        aw86224_play_ram_long(2, 14,RT_TRUE);
+        rt_thread_mdelay(1000);
+        log_d("play ram 3 long\n");
+        aw86224_play_ram_long(3, 14,RT_TRUE);
+        rt_thread_mdelay(1000);
+        log_d("play ram 4 long\n");
+        aw86224_play_ram_long(4, 14,RT_TRUE);
+        rt_thread_mdelay(1000);
     }
 }

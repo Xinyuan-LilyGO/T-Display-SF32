@@ -128,6 +128,7 @@ extern "C"
         LORA_EVENT_SF,
         LORA_EVENT_CR,
         LORA_EVENT_SYNC,
+        LORA_EVENT_INTERVAL_TIME,
         LORA_EVENT_SEND_MESSAGE,
         LORA_EVENT_RECEIVE_MESSAGE,
         SENSOR_EVENT_MOTOR,
@@ -144,6 +145,7 @@ extern "C"
         SYSTEM_EVENT_BLUETOOTH,
         SYSTEM_EVENT_WIFI,
         SYSTEM_EVENT_KEY_LED,
+        SYSTEM_EVENT_DISPLAY_ROTATION,
         SYSTEM_EVENT_BRIGHTNESS,
         SYSTEM_EVENT_VOLUME,
         SYSTEM_EVENT_MOTOR,
@@ -221,7 +223,7 @@ extern "C"
 
 /*UI color */
 #define LV_COLOR_THEME_BLACK 0x000000
-#define LV_COLOR_THEME_WIHTE 0xffffff
+#define LV_COLOR_THEME_WHITE 0xffffff
 #define LV_COLOR_THEME_GREEN 0x00ff00
 #define LV_COLOR_THEME_YELLOW 0xff9d00
 #define LV_COLOR_WARM_RED 0xff0027
@@ -280,6 +282,7 @@ extern "C"
         lv_obj_t *lora_config_cont;
         lv_obj_t *lora_send_recevice_msg_cont;
         lv_obj_t *rx_msg_label;
+        lv_obj_t *tx_time_tile;
         lv_obj_t *tx_msg_label;
         lv_obj_t *rx_rssi_label;
         lv_obj_t *rx_snr_label;
@@ -387,9 +390,10 @@ extern "C"
 
     typedef struct
     {
-        lv_obj_t *bt_btn;
-        lv_obj_t *wifi_btn;
-        lv_obj_t *key_led_btn;
+        // lv_obj_t *bt_btn;
+        // lv_obj_t *wifi_btn;
+        // lv_obj_t *key_led_btn;
+        lv_obj_t *display_rotation_dropdown;
         lv_obj_t *brightness_slider;
         lv_obj_t *volume_slider;
         lv_obj_t *motor_slider;
@@ -402,6 +406,8 @@ extern "C"
     typedef struct
     {
         lv_obj_t *vol_popup;
+        lv_obj_t *vol_bar;
+        lv_obj_t *vol_label;
         lv_timer_t *vol_timer;
     } overall_ui_objects_t;
 

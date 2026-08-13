@@ -184,7 +184,7 @@ int main(void)
     {
         init_error |= INIT_MOTOR_AW86224_ERROR;
     }
-    aw86224_play_ram_short(1, RT_TRUE);
+    aw86224_play_ram_long(4, 14, RT_TRUE);
 
     if (uart_mux_init(UART_BUS_NAME) == RT_EOK)
     {

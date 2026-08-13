@@ -244,6 +244,9 @@ static int bt_a2dp_event_handler(uint16_t event_id, uint8_t *data, uint16_t data
         {
             env->addr = profile_info->mac;
             env->is_a2dp_connected = 1;
+#ifdef AUDIO_USING_MANAGER
+            audio_server_set_private_volume(AUDIO_TYPE_BT_MUSIC, audio_get_volume());
+#endif
         }
         LOG_I("A2DP connected");
         break;
@@ -301,6 +304,15 @@ static int bt_avrcp_event_handler(uint16_t event_id, uint8_t *data, uint16_t dat
         if (voide_start == 1 || voide_start == 0)
         {
             current_music.is_playing = voide_start;
+            LOG_I("AVRCP play status: %d", voide_start);
+            if (voide_start == 0)
+            {
+                audio_pa_open();
+            }
+            else
+            {
+                audio_pa_close();
+            }
         }
 
         break;
