@@ -11,6 +11,8 @@
 #include "sgm41562b.h"
 
 #define LOD_PIN 41
+#define WIFI_SSID "your_wifi_ssid"
+#define WIFI_PASSWORD "your_wifi_password"
 
 static void at_callback(int resp_id, const char *response, int result)
 {
@@ -64,7 +66,7 @@ int main(void)
     esp32_at_test(AT_RESP_ID_TEST);
     esp32_at_cwinit(AT_RESP_ID_CWINIT);
     esp32_at_cwmode(AT_RESP_ID_CWMODE, 3);
-    esp32_at_cwjap(AT_RESP_ID_CWJAP, "xinyuandianzi", "AA15994823428");
+    esp32_at_cwjap(AT_RESP_ID_CWJAP, WIFI_SSID, your_wifi_password);
 
     while (1)
     {
