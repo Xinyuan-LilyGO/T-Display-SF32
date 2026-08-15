@@ -8,6 +8,33 @@ To update the SDK version, please refer to the update_sdk_install.md document: [
 # Overview
 The T-SF32-Display development board is a platform based on SiFli's latest ultra-low-power AIoT MCU chip SF32LB52X. It is designed for smart wearables, smart home, industrial sensing, and IoT applications, featuring a rich set of peripheral interfaces and sensors.
 
+## T-SF32-Display Feature Support Matrix
+
+The table below describes the capabilities of the standalone T-SF32-Display board. Features provided by the optional T-SF32-Keyboard expansion board are identified separately.
+
+| Function                                                    | Support status | Requirements and limitations                                                                                              |
+| ----------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| SF32LB52X HCPU and LCPU                                     | ✅              | HCPU and LCPU applications are supported by the SiFli SDK.                                                                |
+| Bluetooth Classic and BLE 5.3                               | ✅              | Requires the corresponding LCPU Bluetooth image and HCPU Bluetooth application.                                           |
+| AMOLED display                                              | ✅              | Onboard 2.16-inch CO5300 AMOLED display.                                                                                  |
+| Capacitive touch                                            | ✅              | Onboard CST9220 touch controller.                                                                                         |
+| Audio input and output                                      | ✅              | Supports the onboard microphone, speaker amplifier, and 3.5 mm audio interface.                                           |
+| LoRa                                                        | ✅              | Onboard SX1262-compatible LoRa module; the operating frequency depends on the board variant.                              |
+| TF / microSD card                                           | ✅              | Uses the shared SPI1 bus and a dedicated chip-select signal.                                                              |
+| IMU                                                         | ✅              | Onboard BHI260AP sensor connected through I2C1.                                                                           |
+| Battery charging and monitoring                             | ✅              | Uses the onboard SGM41562B charger; application firmware must provide low-battery protection.                             |
+| Three user buttons                                          | ✅              | Connected to PA33, PA34, and PA35.                                                                                        |
+| USB-to-UART download and logging                            | ✅              | The onboard Type-C data lines are connected to the CH343P USB-to-UART bridge.                                             |
+| TF/microSD SDIO/SDMMC interface                             | ❌              | TF card connected in SPI mode                                                                                             |
+| Native USB MSC, CDC, or HID through the onboard Type-C port | ❌              | SF32LB52X supports USB Device, but the onboard Type-C D+/D- lines are not connected to the MCU.                           |
+| USB Host through the onboard Type-C port                    | ❌              | The onboard connector is wired for the CH343P and does not provide an MCU USB Host data path or host VBUS control.        |
+| Wi-Fi                                                       | ✅              | Requires the ESP32-C6 module on the T-SF32-Keyboard board and its AT firmware. The module shares UART2 with the L76K GPS. |
+| GPS                                                         | ✅              | Requires the L76K module on the T-SF32-Keyboard board and shares UART2 with the ESP32-C6.                                 |
+| Matrix keyboard and keyboard LEDs                           | ✅              | Requires the T-SF32-Keyboard board with TCA8418, AW21009, and XL9555 devices.                                             |
+| Temperature, humidity, and pressure sensing                 | ✅              | Requires the BME280 on the T-SF32-Keyboard board.                                                                         |
+| Infrared transmission                                       | ✅              | Requires the infrared transmitter on the T-SF32-Keyboard board and uses PA36.                                             |
+| Vibration motor                                             | ✅              | Requires the AW86224 and motor on the T-SF32-Keyboard board.                                                              |
+
 # Notes  
 - The startup voltage of the SF32LB52X chip must be greater than 3.5V, so please ensure the battery voltage is above 3.5V; otherwise, it will not start properly.
 - When programming your own firmware, implement battery voltage detection and low-battery shutdown functionality in advance, otherwise over-discharge of the battery may easily occur.
