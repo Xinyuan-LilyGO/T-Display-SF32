@@ -1,0 +1,32 @@
+#APP specific configuration.
+config BF0_HCPU
+    bool
+    default y
+
+config CUSTOM_MEM_MAP
+    bool 
+	select custom_mem_map
+	default y
+
+config ENABLE_DFU
+	bool "enable dfu and add dfu sub-project"
+	default n
+
+menu "XL9555 example configuration"
+
+config XL9555_EXAMPLE_OUTPUT_PIN
+	int "Output pin (0-15)"
+	range 0 15
+	default 15
+
+config XL9555_EXAMPLE_INPUT_MASK
+	hex "Interrupt input pin mask"
+	range 0x0000 0xFFFF
+	default 0x00FF
+
+config XL9555_EXAMPLE_TOGGLE_PERIOD_MS
+	int "Output toggle and IO read period (ms)"
+	range 10 60000
+	default 1000
+
+endmenu

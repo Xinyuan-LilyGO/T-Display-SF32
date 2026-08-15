@@ -1,0 +1,25 @@
+#APP specific configuration.
+config BF0_HCPU
+    bool
+    default y
+
+config CUSTOM_MEM_MAP
+    bool 
+	select custom_mem_map
+	default y
+
+config ENABLE_DFU
+	bool "enable dfu and add dfu sub-project"
+	default n
+
+menu "Joypad configuration"
+
+config JOYPAD_USING_ADS1115_IRQ
+	bool "Read ADS1115 through ALERT/RDY interrupt"
+	default n
+	help
+	  Use ADS1115 continuous-conversion mode and alternate AIN0/AIN1
+	  after each valid conversion. Disable this option to read both axes
+	  through the standard RT-Thread ADC Device interface.
+
+endmenu
