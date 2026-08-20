@@ -38,6 +38,8 @@ The table below describes the capabilities of the standalone T-SF32-Display boar
 # Notes  
 - The startup voltage of the SF32LB52X chip must be greater than 3.5V, so please ensure the battery voltage is above 3.5V; otherwise, it will not start properly.
 - When programming your own firmware, implement battery voltage detection and low-battery shutdown functionality in advance, otherwise over-discharge of the battery may easily occur.
+- Flashing failed. Please first check if the battery is properly connected, then retry flashing.  
+- If the terminal takes a long time to start during flashing, please unplug and replug the USB cable.
 
 # Hardware Features
 ## 1. MCU
