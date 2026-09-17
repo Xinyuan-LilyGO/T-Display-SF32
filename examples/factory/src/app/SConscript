@@ -1,0 +1,13 @@
+import os
+from building import *
+
+cwd = GetCurrentDir()
+src = Glob('*.c')
+src_root = os.path.dirname(cwd)
+CPPPATH = [cwd,
+           os.path.join(src_root, 'platform'),
+           os.path.join(src_root, 'services')]
+
+group = DefineGroup('FactoryApp', src, depend=[''], CPPPATH=CPPPATH)
+
+Return('group')

@@ -1,0 +1,46 @@
+import os
+from building import *
+
+# Add source code
+src = Glob('*.c')
+
+cwd = GetCurrentDir() # get current dir path
+
+app_dir = os.path.join(cwd, 'app')
+src.extend(SConscript(os.path.join(app_dir, 'SConscript'),
+                      variant_dir='app', duplicate=0))
+
+platform_dir = os.path.join(cwd, 'platform')
+src.extend(SConscript(os.path.join(platform_dir, 'SConscript'),
+                      variant_dir='platform', duplicate=0))
+
+services_dir = os.path.join(cwd, 'services')
+src.extend(SConscript(os.path.join(services_dir, 'SConscript'),
+                      variant_dir='services', duplicate=0))
+
+ui_core_dir = os.path.join(cwd, 'ui', 'core')
+src.extend(SConscript(os.path.join(ui_core_dir, 'SConscript'),
+                      variant_dir='ui/core', duplicate=0))
+
+ui_pages_dir = os.path.join(cwd, 'ui', 'pages')
+src.extend(SConscript(os.path.join(ui_pages_dir, 'SConscript'),
+                      variant_dir='ui/pages', duplicate=0))
+
+ui_image_dir = os.path.join(cwd, 'ui', 'res', 'image')
+src.extend(SConscript(os.path.join(ui_image_dir, 'SConscript'),
+                      variant_dir='ui/res/image', duplicate=0))
+
+CPPPATH = [cwd, app_dir, platform_dir, services_dir]
+
+#Add resources.
+# Ensure directory is created before any builder is executed
+# If the path is not present, it would not be added in "include path" and 'lang_pack.h' dependency would not work
+# Execute(Mkdir('res/strings'))
+# src.extend(SConscript(os.path.join(cwd, 'res/images/SConscript'), variant_dir="res/images", duplicate=0))
+# src.extend(SConscript(os.path.join(cwd, 'res/fonts/SConscript'), variant_dir="res/fonts", duplicate=0))
+# src.extend(SConscript(os.path.join(cwd, 'res/strings/SConscript'), variant_dir="res/strings", duplicate=0))
+
+
+group = DefineGroup('Applications', src, depend = ['PKG_USING_LITTLEVGL2RTT'] ,CPPPATH = CPPPATH)
+
+Return('group')

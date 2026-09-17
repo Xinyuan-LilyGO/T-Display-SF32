@@ -1,0 +1,18 @@
+import os
+from building import *
+
+cwd = GetCurrentDir()
+src = Glob('*.c')
+ui_dir = os.path.dirname(cwd)
+src_root = os.path.dirname(ui_dir)
+
+CPPPATH = [cwd,
+           os.path.join(ui_dir, 'core'),
+           os.path.join(src_root, 'app'),
+           os.path.join(src_root, 'services')]
+
+group = DefineGroup('FactoryUIPages', src,
+                    depend=['PKG_USING_LITTLEVGL2RTT'],
+                    CPPPATH=CPPPATH)
+
+Return('group')

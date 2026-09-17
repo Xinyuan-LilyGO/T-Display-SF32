@@ -1,0 +1,51 @@
+#APP specific configuration.
+config BF0_HCPU
+    bool
+    default y
+
+config CUSTOM_MEM_MAP
+    bool 
+	select custom_mem_map
+	default y
+
+config ENABLE_DFU
+	bool "enable dfu and add dfu sub-project"
+	default n
+
+choice FACTORY_HARDWARE_PROFILE
+    prompt "Factory hardware profile"
+    optional
+
+config FACTORY_HW_USING_KEYBOARD
+    bool "T-SF32 Keyboard board"
+    select BSP_USING_UART2
+    select BSP_UART2_RX_USING_DMA
+    select PKG_USING_PKG_KEY_BOARD
+    select TCA8418_USING_RT_DEVICE
+    select PKG_USING_AW21009
+    select PKG_USING_XL9555
+    select XL9555_USING_RT_DEVICE
+    select PKG_USING_BME280
+    select BME280_USING_RT_SENSOR
+    select PKG_USING_INFRARED
+    select PKG_USING_UART_MANGER
+    select PKG_USING_L76K
+    select L76K_USING_RT_SENSOR
+    select PKG_USING_ESP32C6_AT_COMMAND
+    help
+        Enable the XL9555, TCA8418/AW21009 keyboard, BME280, AW86224,
+        L76K, ESP32-C6 and infrared devices. Joypad-only devices are
+        excluded from the build and device error reporting.
+
+config FACTORY_HW_USING_JOYPAD
+    bool "T-SF32 Joypad board"
+    select PKG_USING_XL9555
+    select XL9555_USING_RT_DEVICE
+    select PKG_USING_ADS1115
+    select PKG_USING_WS2812
+    help
+        Initialize XL9555 P0_0..P0_6 keys, ADS1115 AIN0/AIN1 and four
+        WS2812 LEDs. All keyboard-board devices are excluded from the build
+        and device error reporting.
+
+endchoice
