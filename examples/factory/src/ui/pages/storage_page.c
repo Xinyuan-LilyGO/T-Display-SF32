@@ -6,6 +6,7 @@
 
 #include <lvgl.h>
 
+#include "lv_font.h"
 #include "storage_service.h"
 #include "platform_psram.h"
 #include "ui_config.h"
@@ -315,7 +316,7 @@ static void storage_page_create_row(size_t index)
     storage_service_name_to_utf8(entry->name, display_name,
                                  sizeof(display_name));
     name = storage_page_create_label(row, display_name,
-                                     &lv_font_simsun_16_cjk,
+                                     &lv_font_source_han_sans_sc_16_cjk,
                                      UI_COLOR_TEXT);
     lv_obj_set_size(name, 274, 26);
     lv_label_set_long_mode(name, LV_LABEL_LONG_DOT);
@@ -543,7 +544,7 @@ static void storage_page_create_location(lv_obj_t *parent)
     lv_obj_center(up_icon);
 
     storage_path_label = storage_page_create_label(
-        location, "/", &lv_font_simsun_16_cjk, UI_COLOR_TEXT);
+        location, "/", &lv_font_source_han_sans_sc_16_cjk, UI_COLOR_TEXT);
     lv_obj_set_size(storage_path_label, 270, 24);
     lv_label_set_long_mode(storage_path_label, LV_LABEL_LONG_DOT);
     lv_obj_set_pos(storage_path_label, 58, 14);
@@ -592,7 +593,7 @@ static void storage_page_on_create(ui_page_t *page)
     lv_obj_set_scrollbar_mode(storage_list, LV_SCROLLBAR_MODE_AUTO);
 
     storage_footer_label = storage_page_create_label(
-        page->root, "", &lv_font_simsun_16_cjk, UI_COLOR_MUTED);
+        page->root, "", &lv_font_source_han_sans_sc_16_cjk, UI_COLOR_MUTED);
     lv_obj_set_size(storage_footer_label, STORAGE_PAGE_CONTENT_WIDTH, 22);
     lv_label_set_long_mode(storage_footer_label, LV_LABEL_LONG_DOT);
     lv_obj_set_pos(storage_footer_label, STORAGE_PAGE_SIDE_PADDING, 442);

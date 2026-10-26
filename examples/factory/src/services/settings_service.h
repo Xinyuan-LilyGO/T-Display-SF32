@@ -48,6 +48,8 @@ rt_err_t settings_service_get_keyboard_led(uint8_t *percent);
 rt_err_t settings_service_set_keyboard_led(uint8_t percent);
 rt_err_t settings_service_get_motor_enabled(bool *enabled);
 rt_err_t settings_service_set_motor_enabled(bool enabled);
+rt_err_t settings_service_get_motor_config(uint8_t *amplitude_percent,
+                                           uint8_t *effect);
 rt_err_t settings_service_preview_motor(uint8_t amplitude_percent,
                                         uint8_t effect);
 

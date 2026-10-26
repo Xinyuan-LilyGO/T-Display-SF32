@@ -1,3 +1,4 @@
+*.o
 # 编译中间文件                                                                                                          *.o
 *.d
 
@@ -18,12 +19,16 @@ __pycache__/
 **/tools/SifliTrace_v2.2.6/log/
 
 # claude
-**/.claude/
+**/.claude
+**/.codex
+**/.agents
 Sifli-V2.5.0-T-Display-SF32.code-workspace
 Sifli-V2.4.0-T-Display-SF32.code-workspace
 test/
 firmware/old_version/
 hardware/old_version/
 res/
-image/on_upload/
+image/no_upload/
 power_image/
+tools/SiFli_RfTool_v1.6
+ignore/

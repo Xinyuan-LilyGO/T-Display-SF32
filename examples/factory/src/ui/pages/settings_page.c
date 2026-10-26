@@ -340,6 +340,15 @@ static void settings_page_load_state(void)
         settings_state.volume = value;
     if (settings_service_get_menu_style(&value) == RT_EOK)
         settings_state.menu_style = value;
+    if (settings_service_get_motor_enabled(&enabled) == RT_EOK)
+        settings_state.motor_enabled = enabled;
+    if (settings_service_get_motor_config(
+            &settings_state.motor_amplitude,
+            &settings_state.motor_effect) != RT_EOK)
+    {
+        settings_state.motor_amplitude = 70U;
+        settings_state.motor_effect = 0U;
+    }
 
 #if defined(FACTORY_HW_USING_KEYBOARD)
     if (settings_service_get_wifi_status(&settings_wifi_status) == RT_EOK)
@@ -350,8 +359,6 @@ static void settings_page_load_state(void)
     {
         settings_state.wifi_enabled = enabled;
     }
-    if (settings_service_get_motor_enabled(&enabled) == RT_EOK)
-        settings_state.motor_enabled = enabled;
     if (settings_service_get_keyboard_led(&value) == RT_EOK)
         settings_state.keyboard_led_brightness = value;
 #elif defined(FACTORY_HW_USING_JOYPAD)
@@ -2286,6 +2293,7 @@ static void settings_page_on_create(ui_page_t *page)
     settings_page_add_row(settings_main_list, SETTINGS_ITEM_KEYBOARD_LED);
 #elif defined(FACTORY_HW_USING_JOYPAD)
     settings_page_add_section(settings_main_list, "JOYPAD");
+    settings_page_add_row(settings_main_list, SETTINGS_ITEM_MOTOR);
     settings_page_add_row(settings_main_list, SETTINGS_ITEM_RGB_LED);
 #endif
 

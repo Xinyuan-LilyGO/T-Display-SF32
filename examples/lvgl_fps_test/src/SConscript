@@ -1,0 +1,19 @@
+import os
+from building import *
+
+# Add source code
+src = Glob('*.c')
+
+cwd = GetCurrentDir() # get current dir path
+
+CPPPATH = [cwd]
+
+group = DefineGroup('Applications', src, depend = [''] ,CPPPATH = CPPPATH)
+
+# Reuse the repository's official LVGL v9 demos without copying their sources.
+demo_dir = os.path.join(GetCurrentDir(), '..', '..',
+                        'multimedia', 'lvgl', 'lvgl_v9_demos', 'src')
+demo_script = os.path.join(demo_dir, 'lv_demos', 'SConscript')
+group += SConscript(demo_script, variant_dir='lv_demos', duplicate=0)
+
+Return('group')

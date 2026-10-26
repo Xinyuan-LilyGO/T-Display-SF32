@@ -484,8 +484,8 @@ static void ui_3d_draw_face(lv_layer_t *layer,
     lv_draw_triangle_dsc_t triangle;
 
     lv_draw_triangle_dsc_init(&triangle);
-    triangle.bg_color = color;
-    triangle.bg_opa = LV_OPA_COVER;
+    triangle.color = color;
+    triangle.opa = LV_OPA_COVER;
     if (diagonal == 0U)
     {
         triangle.p[0] = points[face->vertex[0]];

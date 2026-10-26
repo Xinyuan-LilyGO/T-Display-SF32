@@ -8,6 +8,7 @@
 #include "bluetooth_service.h"
 #include "communication_service.h"
 #include "codex_micro_service.h"
+#include "haptic_service.h"
 #include "input_service.h"
 #include "infrared_service.h"
 #include "keyboard_service.h"
@@ -281,12 +282,12 @@ void app_update_status_bar(void)
         result = ui_service_publish_pomodoro_complete();
         if (result != RT_EOK)
             LOG_W("Queue Pomodoro completion popup failed: %d", result);
-#if defined(FACTORY_HW_USING_KEYBOARD)
-        result = keyboard_service_play_alert(10000U);
+#ifdef PKG_USING_AW86224
+        result = haptic_service_play_alert(10000U);
         if (result != RT_EOK)
             LOG_W("Start Pomodoro vibration failed: %d", result);
         else
-            LOG_I("Pomodoro keyboard vibration started");
+            LOG_I("Pomodoro vibration started");
 #endif
     }
 
@@ -442,18 +443,25 @@ static void app_lvgl_input_callback(const input_event_t *event,
                 event->action == INPUT_ACTION_LONG_PRESSED);
     if (accepted)
     {
-        result = keyboard_service_play_key_feedback();
+        result = haptic_service_play_key_feedback();
         if (result != RT_EOK && result != -RT_ENOSYS)
             LOG_W("Play keyboard feedback failed: %d", result);
     }
 #elif defined(FACTORY_HW_USING_JOYPAD)
+    if (event->source == INPUT_SOURCE_JOYPAD_KEY &&
+            event->action == INPUT_ACTION_PRESSED)
+    {
+        result = haptic_service_play_key_feedback();
+        if (result != RT_EOK && result != -RT_ENOSYS)
+            LOG_W("Play joypad key feedback failed: %d", result);
+    }
     accepted = (event->source == INPUT_SOURCE_JOYPAD_KEY &&
                 (event->code == INPUT_JOYPAD_ESC_PIN ||
                  event->code == INPUT_JOYPAD_HOME_PIN ||
                  event->code == INPUT_JOYPAD_ENTER_PIN) &&
                 event->action == INPUT_ACTION_PRESSED) ||
-               (event->source == INPUT_SOURCE_JOYPAD_AXIS &&
-                event->action == INPUT_ACTION_CLICKED);
+                (event->source == INPUT_SOURCE_JOYPAD_AXIS &&
+                 event->action == INPUT_ACTION_CLICKED);
 #endif
     if (!accepted)
         return;
@@ -531,6 +539,15 @@ rt_err_t app_init(void)
     if (result != RT_EOK)
         LOG_E("Input service initialization failed: %d", result);
 
+#ifdef PKG_USING_AW86224
+    result = haptic_service_init();
+    if (result != RT_EOK)
+    {
+        LOG_E("Haptic service initialization failed: %d", result);
+        init_errors |= APP_INIT_ERROR_AW86224;
+    }
+#endif
+
 // #if defined(FACTORY_HW_USING_KEYBOARD) || \
 //     defined(FACTORY_HW_USING_JOYPAD)
     if (input_service_is_ready())
@@ -575,9 +592,6 @@ rt_err_t app_init(void)
     if ((keyboard_service_get_init_errors() &
             KEYBOARD_INIT_ERROR_AW21009) != 0U)
         init_errors |= APP_INIT_ERROR_AW21009;
-    if ((keyboard_service_get_init_errors() &
-            KEYBOARD_INIT_ERROR_AW86224) != 0U)
-        init_errors |= APP_INIT_ERROR_AW86224;
     if ((keyboard_service_get_init_errors() &
             KEYBOARD_INIT_ERROR_INFRARED) != 0U)
         init_errors |= APP_INIT_ERROR_INFRARED;

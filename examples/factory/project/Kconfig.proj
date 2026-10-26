@@ -49,3 +49,11 @@ config FACTORY_HW_USING_JOYPAD
         and device error reporting.
 
 endchoice
+
+config FACTORY_JOYPAD_USING_ANALOG
+    bool "Enable ADS1115 joystick axis"
+    default y if FACTORY_HW_USING_JOYPAD
+    help
+        Enable AIN0/AIN1 polling and analog direction events. Disable
+        this when the ADS1115 is present but no joystick is connected,
+        because floating inputs can generate false directions.

@@ -15,7 +15,12 @@
 #define HOME_CAROUSEL_ROW_COUNT 5U
 #define HOME_CAROUSEL_CENTER_ROW (HOME_CAROUSEL_ROW_COUNT / 2U)
 #define HOME_CAROUSEL_PROGRESS_SCALE 1024
-#define HOME_CAROUSEL_KEY_ANIM_TIME_MS 220U
+#define HOME_CAROUSEL_ANIM_MIN_TIME_MS 180U
+#define HOME_CAROUSEL_ANIM_MAX_TIME_MS 480U
+#define HOME_CAROUSEL_TOUCH_ANIM_MIN_TIME_MS 90U
+#define HOME_CAROUSEL_TOUCH_ANIM_MAX_TIME_MS 220U
+#define HOME_CAROUSEL_SWIPE_TRIGGER_PX 48
+#define HOME_CAROUSEL_SWIPE_STEP_PX 96
 #define HOME_RAIL_X 160
 #define HOME_RAIL_Y 0
 #define HOME_RAIL_HEIGHT 208
@@ -31,7 +36,7 @@
 #define HOME_HONEYCOMB_DRAG_LIMIT 8
 #define HOME_HONEYCOMB_THROW_FACTOR 6
 #define HOME_HONEYCOMB_SETTLE_TIME_MS 260
-#define HOME_HONEYCOMB_TOUCH_FRAME_MS 30U
+#define HOME_HONEYCOMB_TOUCH_FRAME_MS 16U
 #define HOME_APP_MUSIC_INDEX 0U
 #define HOME_APP_AUDIO_INDEX 1U
 #define HOME_APP_LORA_INDEX  2U
@@ -97,6 +102,8 @@ typedef struct
     lv_obj_t *name;
     lv_obj_t *field[HOME_APP_INFO_MAX];
     lv_obj_t *value[HOME_APP_INFO_MAX];
+    int32_t translate_x;
+    bool translate_valid;
 } home_carousel_row_t;
 
 static const home_app_definition_t home_apps[] = {
@@ -145,8 +152,18 @@ static bool home_carousel_positioned;
 static bool home_carousel_key_animating;
 static int32_t home_carousel_key_start_y;
 static int32_t home_carousel_key_end_y;
+static int32_t home_carousel_key_step;
+static int32_t home_carousel_anim_committed_steps;
+static int32_t home_carousel_anim_center_scroll_y;
+static int32_t home_carousel_pending_key_steps;
+static bool home_carousel_fast_animation;
+static int32_t home_carousel_touch_start_y;
+static int32_t home_carousel_touch_start_scroll_y;
+static bool home_carousel_touch_tracking;
 static int32_t home_carousel_focus_slot = -1;
 static uint32_t home_carousel_current_index;
+static uint32_t home_carousel_displayed_index = UINT32_MAX;
+static int32_t home_carousel_marker_height = -1;
 static lv_obj_t *home_honeycomb_view;
 static lv_obj_t *home_honeycomb_icons[HOME_APP_COUNT];
 static lv_obj_t *home_honeycomb_selection;
@@ -170,6 +187,8 @@ static uint32_t home_selected_app_index;
 static lv_obj_t *home_page_carousel_item_at(int32_t slot);
 static int32_t home_page_carousel_center_slot(void);
 static void home_page_carousel_row_event(lv_event_t *event);
+static bool home_page_carousel_start_key_animation(int32_t step);
+static void home_page_carousel_start_pending_animation(void);
 
 static bool home_page_open_app(uint32_t app_index)
 {
@@ -509,26 +528,24 @@ static void home_page_update_carousel(lv_obj_t *list)
     lv_area_t list_area;
     int32_t list_center_y;
     int32_t radius;
-    uint32_t child_count;
     uint32_t index;
 
     lv_obj_get_coords(list, &list_area);
     list_center_y = list_area.y1 + lv_area_get_height(&list_area) / 2;
     radius = lv_area_get_height(&list_area) / 2;
-    child_count = lv_obj_get_child_count(list);
 
-    for (index = 0; index < child_count; index++)
+    for (index = 0; index < HOME_CAROUSEL_ROW_COUNT; index++)
     {
-        lv_obj_t *child = lv_obj_get_child(list, (int32_t)index);
+        home_carousel_row_t *view = &home_carousel_rows[index];
+        lv_obj_t *child = view->row;
         lv_area_t child_area;
         int32_t child_center_y;
         int32_t signed_distance;
         int32_t distance;
         int32_t offset;
         int32_t translate_x;
-        lv_opa_t opacity;
 
-        if (lv_obj_has_flag(child, LV_OBJ_FLAG_FLOATING))
+        if (child == RT_NULL)
             continue;
 
         lv_obj_get_coords(child, &child_area);
@@ -540,7 +557,6 @@ static void home_page_update_carousel(lv_obj_t *list)
         if (distance >= radius)
         {
             offset = radius;
-            opacity = LV_OPA_TRANSP;
         }
         else
         {
@@ -550,15 +566,17 @@ static void home_page_update_carousel(lv_obj_t *list)
 
             lv_sqrt(offset_square, &square_root, 0x8000);
             offset = radius - square_root.i;
-            opacity = (lv_opa_t)lv_map(distance, 0, radius,
-                                       LV_OPA_COVER, LV_OPA_TRANSP);
         }
 
         /* Both sides follow the right arc: the current item leaves toward
          * the upper right and the next item enters from the lower right. */
         translate_x = offset;
-        lv_obj_set_style_translate_x(child, translate_x, 0);
-        lv_obj_set_style_opa(child, opacity, 0);
+        if (!view->translate_valid || view->translate_x != translate_x)
+        {
+            lv_obj_set_style_translate_x(child, translate_x, 0);
+            view->translate_x = translate_x;
+            view->translate_valid = true;
+        }
     }
 
     if (home_carousel_positioned)
@@ -573,11 +591,13 @@ static void home_page_update_carousel(lv_obj_t *list)
                 (int32_t)home_carousel_current_index + center_slot -
                 (int32_t)HOME_CAROUSEL_CENTER_ROW);
         }
-        if (home_index_label != RT_NULL)
+        if (home_index_label != RT_NULL &&
+            home_carousel_displayed_index != current_index)
         {
             lv_label_set_text_fmt(home_index_label, "%02u / %02u",
                                   (unsigned int)(current_index + 1U),
                                   (unsigned int)HOME_APP_COUNT);
+            home_carousel_displayed_index = current_index;
         }
 
         if (HOME_APP_COUNT > 1U)
@@ -626,10 +646,11 @@ static void home_page_update_carousel(lv_obj_t *list)
         {
             marker_height = HOME_RAIL_HEIGHT;
         }
-        if (home_rail_marker != RT_NULL)
+        if (home_rail_marker != RT_NULL &&
+            home_carousel_marker_height != marker_height)
         {
-            lv_obj_set_y(home_rail_marker, HOME_RAIL_Y);
             lv_obj_set_height(home_rail_marker, marker_height);
+            home_carousel_marker_height = marker_height;
         }
     }
 }
@@ -702,14 +723,10 @@ static void home_page_carousel_recenter(void)
     home_scroll_repositioning = was_repositioning;
 }
 
-static void home_page_carousel_finish_scroll(void)
+static void home_page_carousel_commit_delta(int32_t delta)
 {
-    int32_t center_slot = home_page_carousel_center_slot();
-
-    if (center_slot >= 0)
+    if (delta != 0)
     {
-        int32_t delta = center_slot - (int32_t)HOME_CAROUSEL_CENTER_ROW;
-
         home_carousel_current_index = home_page_carousel_wrap_index(
             (int32_t)home_carousel_current_index + delta);
         home_selected_app_index = home_carousel_current_index;
@@ -722,17 +739,44 @@ static void home_page_carousel_finish_scroll(void)
     home_page_update_carousel(home_app_list);
 }
 
-static void home_page_carousel_key_anim_progress(void *object,
-                                                 int32_t progress)
+static int32_t home_page_carousel_steps_for_distance(int32_t distance)
 {
+    int32_t magnitude = LV_ABS(distance);
+    int32_t steps;
+    int32_t max_steps = (int32_t)HOME_APP_COUNT - 1;
+
+    if (magnitude < HOME_CAROUSEL_SWIPE_TRIGGER_PX)
+        return 0;
+
+    steps = 1 + (magnitude - HOME_CAROUSEL_SWIPE_TRIGGER_PX) /
+                    HOME_CAROUSEL_SWIPE_STEP_PX;
+    if (steps > max_steps)
+        steps = max_steps;
+    return distance > 0 ? steps : -steps;
+}
+
+static void home_page_carousel_key_anim_progress(void *object,
+                                                 int32_t position)
+{
+    int32_t committed_steps;
+    int32_t residual;
     int32_t scroll_y;
 
     if (object == RT_NULL || object != home_app_list)
         return;
 
-    scroll_y = home_carousel_key_start_y +
-               (home_carousel_key_end_y - home_carousel_key_start_y) *
-                   progress / 256;
+    committed_steps = position / HOME_APP_ROW_HEIGHT;
+    residual = position - committed_steps * HOME_APP_ROW_HEIGHT;
+    if (committed_steps != home_carousel_anim_committed_steps)
+    {
+        home_page_carousel_commit_delta(
+            committed_steps - home_carousel_anim_committed_steps);
+        home_carousel_anim_committed_steps = committed_steps;
+        home_carousel_anim_center_scroll_y =
+            lv_obj_get_scroll_y(home_app_list);
+    }
+
+    scroll_y = home_carousel_anim_center_scroll_y + residual;
     home_scroll_repositioning = true;
     lv_obj_scroll_to_y(object, scroll_y, LV_ANIM_OFF);
     home_scroll_repositioning = false;
@@ -744,49 +788,94 @@ static void home_page_carousel_key_anim_completed(lv_anim_t *animation)
     (void)animation;
     home_carousel_key_animating = false;
     if (home_app_list != RT_NULL && home_carousel_positioned)
-        home_page_carousel_finish_scroll();
+    {
+        home_page_carousel_commit_delta(
+            home_carousel_key_step - home_carousel_anim_committed_steps);
+    }
+    home_carousel_key_step = 0;
+    home_carousel_anim_committed_steps = 0;
+    home_carousel_fast_animation = false;
+    home_page_carousel_start_pending_animation();
 }
 
 static bool home_page_carousel_start_key_animation(int32_t step)
 {
     lv_obj_t *center;
-    lv_obj_t *target;
+    lv_area_t list_area;
     lv_area_t center_area;
-    lv_area_t target_area;
+    int32_t list_center_y;
     int32_t center_y;
-    int32_t target_y;
+    int32_t distance;
+    uint32_t duration;
     lv_anim_t animation;
 
     center = home_page_carousel_item_at(
         (int32_t)HOME_CAROUSEL_CENTER_ROW);
-    target = home_page_carousel_item_at(
-        (int32_t)HOME_CAROUSEL_CENTER_ROW + step);
-    if (center == RT_NULL || target == RT_NULL)
+    if (center == RT_NULL)
         return false;
 
     lv_obj_update_layout(home_app_list);
+    lv_obj_get_coords(home_app_list, &list_area);
     lv_obj_get_coords(center, &center_area);
-    lv_obj_get_coords(target, &target_area);
+    list_center_y = list_area.y1 + lv_area_get_height(&list_area) / 2;
     center_y = center_area.y1 + lv_area_get_height(&center_area) / 2;
-    target_y = target_area.y1 + lv_area_get_height(&target_area) / 2;
-    if (center_y == target_y)
+    home_carousel_key_start_y = list_center_y - center_y;
+    home_carousel_key_end_y = step * HOME_APP_ROW_HEIGHT;
+    distance = LV_ABS(home_carousel_key_end_y -
+                      home_carousel_key_start_y);
+    if (distance == 0)
         return false;
 
-    home_carousel_key_start_y = lv_obj_get_scroll_y(home_app_list);
-    home_carousel_key_end_y = home_carousel_key_start_y +
-                              target_y - center_y;
+    if (home_carousel_fast_animation)
+    {
+        duration = HOME_CAROUSEL_TOUCH_ANIM_MIN_TIME_MS +
+                   (uint32_t)distance / 3U;
+        if (duration > HOME_CAROUSEL_TOUCH_ANIM_MAX_TIME_MS)
+            duration = HOME_CAROUSEL_TOUCH_ANIM_MAX_TIME_MS;
+    }
+    else
+    {
+        duration = HOME_CAROUSEL_ANIM_MIN_TIME_MS +
+                   (uint32_t)distance * 3U / 4U;
+        if (duration > HOME_CAROUSEL_ANIM_MAX_TIME_MS)
+            duration = HOME_CAROUSEL_ANIM_MAX_TIME_MS;
+    }
+
+    home_carousel_key_step = step;
+    home_carousel_anim_committed_steps = 0;
+    home_carousel_anim_center_scroll_y =
+        lv_obj_get_scroll_y(home_app_list) - home_carousel_key_start_y;
     home_carousel_key_animating = true;
 
     lv_anim_init(&animation);
     lv_anim_set_var(&animation, home_app_list);
-    lv_anim_set_values(&animation, 0, 256);
-    lv_anim_set_duration(&animation, HOME_CAROUSEL_KEY_ANIM_TIME_MS);
+    lv_anim_set_values(&animation, home_carousel_key_start_y,
+                       home_carousel_key_end_y);
+    lv_anim_set_duration(&animation, duration);
     lv_anim_set_exec_cb(&animation, home_page_carousel_key_anim_progress);
-    lv_anim_set_path_cb(&animation, lv_anim_path_ease_out);
+    if (home_carousel_fast_animation)
+        lv_anim_set_path_cb(&animation, lv_anim_path_ease_out);
+    else
+        lv_anim_set_path_cb(&animation, lv_anim_path_ease_in_out);
     lv_anim_set_completed_cb(&animation,
                              home_page_carousel_key_anim_completed);
     lv_anim_start(&animation);
     return true;
+}
+
+static void home_page_carousel_start_pending_animation(void)
+{
+    int32_t step;
+
+    if (home_carousel_key_animating ||
+        home_carousel_pending_key_steps == 0 ||
+        home_app_list == RT_NULL || !home_carousel_positioned)
+        return;
+
+    step = home_carousel_pending_key_steps > 0 ? 1 : -1;
+    home_carousel_pending_key_steps -= step;
+    if (!home_page_carousel_start_key_animation(step))
+        home_page_carousel_commit_delta(step);
 }
 
 static void home_page_scroll_event(lv_event_t *event)
@@ -807,19 +896,68 @@ static void home_page_scroll_event(lv_event_t *event)
 
     if (code == LV_EVENT_SCROLL_BEGIN)
     {
+        lv_indev_t *input = lv_event_get_indev(event);
+
         if (home_carousel_key_animating &&
             lv_event_get_param(event) == RT_NULL)
         {
             lv_anim_delete(home_app_list,
                            home_page_carousel_key_anim_progress);
             home_carousel_key_animating = false;
+            home_carousel_key_step = 0;
+            home_carousel_anim_committed_steps = 0;
+            home_carousel_pending_key_steps = 0;
+            home_carousel_fast_animation = false;
+        }
+
+        home_carousel_touch_tracking = false;
+        home_carousel_touch_start_scroll_y = lv_obj_get_scroll_y(list);
+        if (input != RT_NULL &&
+            lv_indev_get_type(input) == LV_INDEV_TYPE_POINTER)
+        {
+            lv_point_t point;
+
+            lv_indev_get_point(input, &point);
+            home_carousel_touch_start_y = point.y;
+            home_carousel_touch_tracking = true;
         }
         return;
     }
 
     if (code == LV_EVENT_SCROLL_END)
     {
-        home_page_carousel_finish_scroll();
+        int32_t distance = lv_obj_get_scroll_y(list) -
+                           home_carousel_touch_start_scroll_y;
+        int32_t steps;
+        lv_indev_t *input = lv_event_get_indev(event);
+
+        if (home_carousel_touch_tracking && input != RT_NULL)
+        {
+            lv_point_t point;
+
+            lv_indev_get_point(input, &point);
+            distance = home_carousel_touch_start_y - point.y;
+        }
+        home_carousel_touch_tracking = false;
+        steps = home_page_carousel_steps_for_distance(distance);
+        home_carousel_pending_key_steps = 0;
+        home_carousel_fast_animation = true;
+        if (steps == 0)
+        {
+            if (!home_page_carousel_start_key_animation(0))
+            {
+                home_page_carousel_commit_delta(0);
+                home_carousel_fast_animation = false;
+            }
+        }
+        else
+        {
+            if (!home_page_carousel_start_key_animation(steps))
+            {
+                home_page_carousel_commit_delta(steps);
+                home_carousel_fast_animation = false;
+            }
+        }
         return;
     }
     home_page_update_carousel(list);
@@ -828,6 +966,7 @@ static void home_page_scroll_event(lv_event_t *event)
 static void home_page_carousel_key(uint32_t key)
 {
     int32_t step;
+    int32_t max_pending = (int32_t)HOME_APP_COUNT - 1;
 
     if (home_app_list == RT_NULL || !home_carousel_positioned)
     {
@@ -836,7 +975,8 @@ static void home_page_carousel_key(uint32_t key)
 
     if (key == LV_KEY_ENTER)
     {
-        if (!home_carousel_key_animating)
+        if (!home_carousel_key_animating &&
+            home_carousel_pending_key_steps == 0)
             home_page_open_app(home_carousel_current_index);
         return;
     }
@@ -849,7 +989,15 @@ static void home_page_carousel_key(uint32_t key)
         return;
 
     if (!home_carousel_key_animating)
-        (void)home_page_carousel_start_key_animation(step);
+        home_carousel_fast_animation = false;
+    home_carousel_pending_key_steps += step;
+
+    if (home_carousel_pending_key_steps > max_pending)
+        home_carousel_pending_key_steps = max_pending;
+    else if (home_carousel_pending_key_steps < -max_pending)
+        home_carousel_pending_key_steps = -max_pending;
+
+    home_page_carousel_start_pending_animation();
 }
 
 static void home_page_carousel_create(ui_page_t *page)
@@ -862,6 +1010,15 @@ static void home_page_carousel_create(ui_page_t *page)
     lv_obj_set_scrollbar_mode(page->root, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_scroll_dir(page->root, LV_DIR_NONE);
     home_carousel_current_index = home_selected_app_index;
+    home_carousel_displayed_index = UINT32_MAX;
+    home_carousel_marker_height = -1;
+    home_carousel_key_step = 0;
+    home_carousel_anim_committed_steps = 0;
+    home_carousel_anim_center_scroll_y = 0;
+    home_carousel_pending_key_steps = 0;
+    home_carousel_fast_animation = false;
+    home_carousel_touch_tracking = false;
+    memset(home_carousel_rows, 0, sizeof(home_carousel_rows));
 
     // background = lv_image_create(page->root);
     // lv_image_set_src(background, &dark_bg2);
@@ -942,8 +1099,16 @@ static void home_page_carousel_destroy(ui_page_t *page)
     home_scroll_repositioning = false;
     home_carousel_positioned = false;
     home_carousel_key_animating = false;
+    home_carousel_key_step = 0;
+    home_carousel_anim_committed_steps = 0;
+    home_carousel_anim_center_scroll_y = 0;
+    home_carousel_pending_key_steps = 0;
+    home_carousel_fast_animation = false;
+    home_carousel_touch_tracking = false;
     home_carousel_focus_slot = -1;
     home_carousel_current_index = 0U;
+    home_carousel_displayed_index = UINT32_MAX;
+    home_carousel_marker_height = -1;
     memset(home_carousel_rows, 0, sizeof(home_carousel_rows));
 }
 

@@ -3,6 +3,8 @@
 #include <rtdevice.h>
 #include <ulog.h>
 
+#include "platform_psram.h"
+
 #if defined(PKG_USING_BME280) && defined(BME280_USING_RT_SENSOR)
 #define FACTORY_USING_BME280
 #include "bme280_rt_sensor.h"
@@ -64,7 +66,9 @@ static const char *const sensor_device_names[SENSOR_DEVICE_COUNT] =
 static rt_device_t sensor_devices[SENSOR_DEVICE_COUNT];
 static rt_mutex_t sensor_lock;
 static rt_sem_t sensor_stop_sem;
+static struct rt_thread sensor_thread_control;
 static rt_thread_t sensor_thread;
+static void *sensor_thread_stack;
 static sensor_service_data_t sensor_latest;
 static uint32_t sensor_available_mask;
 static uint32_t sensor_init_errors;
@@ -343,21 +347,32 @@ rt_err_t sensor_service_init(void)
 
     rt_memset(&sensor_latest, 0, sizeof(sensor_latest));
     sensor_stopping = false;
-    sensor_thread = rt_thread_create("sensor", sensor_service_thread,
-                                     RT_NULL, SENSOR_THREAD_STACK_SIZE,
-                                     SENSOR_THREAD_PRIORITY,
-                                     SENSOR_THREAD_TICK);
-    if (sensor_thread == RT_NULL)
+    sensor_thread_stack = t_sf32_psram_alloc(SENSOR_THREAD_STACK_SIZE);
+    if (sensor_thread_stack == RT_NULL)
     {
         result = -RT_ENOMEM;
         goto fail;
     }
 
+    result = rt_thread_init(&sensor_thread_control, "sensor",
+                            sensor_service_thread, RT_NULL,
+                            sensor_thread_stack, SENSOR_THREAD_STACK_SIZE,
+                            SENSOR_THREAD_PRIORITY, SENSOR_THREAD_TICK);
+    if (result != RT_EOK)
+    {
+        t_sf32_psram_free(sensor_thread_stack);
+        sensor_thread_stack = RT_NULL;
+        goto fail;
+    }
+    sensor_thread = &sensor_thread_control;
+
     result = rt_thread_startup(sensor_thread);
     if (result != RT_EOK)
     {
-        rt_thread_delete(sensor_thread);
+        rt_thread_detach(sensor_thread);
         sensor_thread = RT_NULL;
+        t_sf32_psram_free(sensor_thread_stack);
+        sensor_thread_stack = RT_NULL;
         goto fail;
     }
 
@@ -412,8 +427,13 @@ rt_err_t sensor_service_deinit(void)
     result = rt_sem_take(sensor_stop_sem,
                          rt_tick_from_millisecond(SENSOR_STOP_TIMEOUT_MS));
     if (result != RT_EOK && sensor_thread != RT_NULL)
-        rt_thread_delete(sensor_thread);
+        rt_thread_detach(sensor_thread);
     sensor_thread = RT_NULL;
+    if (sensor_thread_stack != RT_NULL)
+    {
+        t_sf32_psram_free(sensor_thread_stack);
+        sensor_thread_stack = RT_NULL;
+    }
 
     sensor_close_devices();
     rt_sem_delete(sensor_stop_sem);

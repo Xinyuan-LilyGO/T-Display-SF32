@@ -10,6 +10,7 @@
 #include "audio_service.h"
 #include "bluetooth_service.h"
 #include "communication_service.h"
+#include "haptic_service.h"
 #include "home_page.h"
 #include "input_service.h"
 #include "keyboard_service.h"
@@ -210,21 +211,40 @@ rt_err_t settings_service_set_keyboard_led(uint8_t percent)
 
 rt_err_t settings_service_get_motor_enabled(bool *enabled)
 {
-    return keyboard_service_get_motor_enabled(enabled);
+    uint8_t amplitude;
+    haptic_effect_t effect;
+
+    return haptic_service_get_config(enabled, &amplitude, &effect);
 }
 
 rt_err_t settings_service_set_motor_enabled(bool enabled)
 {
-    return keyboard_service_set_motor_enabled(enabled);
+    return haptic_service_set_enabled(enabled);
+}
+
+rt_err_t settings_service_get_motor_config(uint8_t *amplitude_percent,
+                                           uint8_t *effect)
+{
+    haptic_effect_t selected_effect;
+    bool enabled;
+    rt_err_t result;
+
+    if (amplitude_percent == RT_NULL || effect == RT_NULL)
+        return -RT_EINVAL;
+    result = haptic_service_get_config(&enabled, amplitude_percent,
+                                       &selected_effect);
+    if (result == RT_EOK)
+        *effect = (uint8_t)selected_effect;
+    return result;
 }
 
 rt_err_t settings_service_preview_motor(uint8_t amplitude_percent,
                                         uint8_t effect)
 {
-    if (effect >= (uint8_t)KEYBOARD_MOTOR_EFFECT_COUNT)
+    if (effect >= (uint8_t)HAPTIC_EFFECT_COUNT)
         return -RT_EINVAL;
-    return keyboard_service_preview_motor(
-        amplitude_percent, (keyboard_motor_effect_t)effect);
+    return haptic_service_preview(amplitude_percent,
+                                  (haptic_effect_t)effect);
 }
 
 static uint8_t settings_service_find_rgb_color(uint8_t red, uint8_t green,

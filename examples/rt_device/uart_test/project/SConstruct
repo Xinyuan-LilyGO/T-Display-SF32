@@ -1,0 +1,29 @@
+import os
+import rtconfig
+
+if os.getenv('RTT_EXEC_PATH'):
+    os.environ['PATH'] = os.getenv('RTT_EXEC_PATH') + os.pathsep + os.environ.get('PATH', '')
+
+SIFLI_SDK = os.getenv('SIFLI_SDK')
+if not SIFLI_SDK:
+    print("Please run set_env.bat in root folder of SiFli SDK to set environment.")
+    exit()
+from building import *
+
+PrepareEnv()
+AddBootLoader(SIFLI_SDK, rtconfig.CHIP)
+SifliEnv()
+
+TARGET = rtconfig.OUTPUT_DIR + rtconfig.TARGET_NAME + '.' + rtconfig.TARGET_EXT
+env = Environment(tools=['mingw'],
+                  AS=rtconfig.AS, ASFLAGS=rtconfig.AFLAGS,
+                  CC=rtconfig.CC, CCFLAGS=rtconfig.CFLAGS,
+                  CXX=rtconfig.CXX, CXXFLAGS=rtconfig.CXXFLAGS,
+                  AR=rtconfig.AR, ARFLAGS='-rc',
+                  LINK=rtconfig.LINK, LINKFLAGS=rtconfig.LFLAGS)
+env.PrependENVPath('PATH', rtconfig.EXEC_PATH)
+
+objs = PrepareBuilding(env)
+DoBuilding(TARGET, objs)
+AddFTAB(SIFLI_SDK, rtconfig.CHIP)
+GenDownloadScript(env)

@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "audio_service.h"
+#include "platform_psram.h"
 
 #ifdef BLUETOOTH
 #include "bf0_sibles.h"
@@ -10,10 +11,6 @@
 #include "bts2_app_inc.h"
 #include "bts2_app_interface.h"
 
-/* SDK 2.5.0 exports these names without the avrcp_ infix. */
-void bt_interface_playback_pos_register_request(void);
-void bt_interface_track_change_register_request(void);
-void bt_avsnk_release_audio(void);
 #endif
 
 #ifdef DBG_WARNING
@@ -52,7 +49,9 @@ typedef struct
 
 static rt_mutex_t bluetooth_lock;
 static rt_mq_t bluetooth_work_queue;
+static struct rt_thread bluetooth_worker_control;
 static rt_thread_t bluetooth_worker;
+static void *bluetooth_worker_stack;
 static rt_timer_t bluetooth_pan_timer;
 static rt_timer_t bluetooth_a2dp_suspend_timer;
 static bluetooth_service_status_t bluetooth_status;
@@ -658,10 +657,10 @@ static int bluetooth_service_avrcp_event(uint16_t event_id, uint8_t *data,
             (bt_notify_profile_state_info_t *)data;
 
         bt_interface_set_avrcp_role_ext(&info->mac, AVRCP_CT);
-        bt_interface_avrcp_playback_register_request();
-        bt_interface_playback_pos_register_request();
-        bt_interface_track_change_register_request();
-        bt_interface_avrcp_get_play_status_request();
+        bt_interface_avrcp_playback_register_request(&info->mac);
+        bt_interface_playback_pos_register_request(&info->mac);
+        bt_interface_track_change_register_request(&info->mac);
+        bt_interface_avrcp_get_play_status_request(&info->mac);
     }
     if (notify)
     {
@@ -752,8 +751,13 @@ static void bluetooth_service_release_resources(void)
 {
     if (bluetooth_worker != RT_NULL)
     {
-        rt_thread_delete(bluetooth_worker);
+        rt_thread_detach(bluetooth_worker);
         bluetooth_worker = RT_NULL;
+    }
+    if (bluetooth_worker_stack != RT_NULL)
+    {
+        t_sf32_psram_free(bluetooth_worker_stack);
+        bluetooth_worker_stack = RT_NULL;
     }
     if (bluetooth_pan_timer != RT_NULL)
     {
@@ -799,18 +803,30 @@ rt_err_t bluetooth_service_init(void)
         "bt_a2dp", bluetooth_service_a2dp_suspend_timer_callback, RT_NULL,
         rt_tick_from_millisecond(BLUETOOTH_A2DP_SUSPEND_GRACE_MS),
         RT_TIMER_FLAG_ONE_SHOT | RT_TIMER_FLAG_SOFT_TIMER);
-    bluetooth_worker = rt_thread_create(
-        "bt_service", bluetooth_service_worker_entry, RT_NULL,
-        BLUETOOTH_WORKER_STACK_SIZE, BLUETOOTH_WORKER_PRIORITY, 10U);
+    bluetooth_worker_stack = t_sf32_psram_alloc(
+        BLUETOOTH_WORKER_STACK_SIZE);
     if (bluetooth_lock == RT_NULL || bluetooth_work_queue == RT_NULL ||
             bluetooth_pan_timer == RT_NULL ||
             bluetooth_a2dp_suspend_timer == RT_NULL ||
-            bluetooth_worker == RT_NULL)
+            bluetooth_worker_stack == RT_NULL)
     {
         LOG_E("Create Bluetooth service resources failed");
         bluetooth_service_release_resources();
         return -RT_ENOMEM;
     }
+
+    result = rt_thread_init(&bluetooth_worker_control, "bt_service",
+                            bluetooth_service_worker_entry, RT_NULL,
+                            bluetooth_worker_stack,
+                            BLUETOOTH_WORKER_STACK_SIZE,
+                            BLUETOOTH_WORKER_PRIORITY, 10U);
+    if (result != RT_EOK)
+    {
+        LOG_E("Initialize Bluetooth worker failed: %d", result);
+        bluetooth_service_release_resources();
+        return result;
+    }
+    bluetooth_worker = &bluetooth_worker_control;
 
     register_result = bt_interface_register_bt_event_notify_callback(
         bluetooth_service_stack_event);
@@ -1098,7 +1114,7 @@ rt_err_t bluetooth_service_prepare_local_audio(void)
         return RT_EOK;
     if (status.music_state == BLUETOOTH_MUSIC_PLAYING)
         result = bluetooth_service_music_pause();
-    bt_avsnk_release_audio();
+    bt_interface_release_a2dp();
     return result;
 #else
     return -RT_ENOSYS;
@@ -1148,9 +1164,14 @@ rt_err_t bluetooth_service_music_volume_up(void)
 {
 #if defined(BLUETOOTH) && defined(CFG_AVRCP)
     rt_err_t result = bluetooth_service_music_check();
+    int volume;
 
     if (result == RT_EOK)
-        bt_interface_avrcp_volume_up();
+    {
+        volume = audio_service_get_volume();
+        if (volume < (int)BLUETOOTH_SERVICE_VOLUME_MAX)
+            result = bluetooth_service_music_set_volume((uint8_t)(volume + 1));
+    }
     return result;
 #else
     return -RT_ENOSYS;
@@ -1161,9 +1182,14 @@ rt_err_t bluetooth_service_music_volume_down(void)
 {
 #if defined(BLUETOOTH) && defined(CFG_AVRCP)
     rt_err_t result = bluetooth_service_music_check();
+    int volume;
 
     if (result == RT_EOK)
-        bt_interface_avrcp_volume_down();
+    {
+        volume = audio_service_get_volume();
+        if (volume > 0)
+            result = bluetooth_service_music_set_volume((uint8_t)(volume - 1));
+    }
     return result;
 #else
     return -RT_ENOSYS;
@@ -1176,6 +1202,8 @@ rt_err_t bluetooth_service_music_set_volume(uint8_t volume)
     uint8_t absolute_volume;
     bt_err_t bt_result;
     rt_err_t result;
+    bluetooth_service_status_t status;
+    bt_notify_device_mac_t peer;
 
     if (volume > BLUETOOTH_SERVICE_VOLUME_MAX)
         return -RT_EINVAL;
@@ -1183,10 +1211,15 @@ rt_err_t bluetooth_service_music_set_volume(uint8_t volume)
     if (result != RT_EOK)
         return result;
 
+    bluetooth_service_copy_status(&status);
+    if (!status.peer_address_valid)
+        return -RT_ERROR;
+    memcpy(peer.addr, status.peer_address, sizeof(peer.addr));
+
     absolute_volume = bt_interface_avrcp_local_vol_2_abs_vol(
         volume, BLUETOOTH_SERVICE_VOLUME_MAX);
-    bt_result = bt_interface_avrcp_set_absolute_volume_as_ct_role(
-        absolute_volume);
+    bt_result = bt_interface_avrcp_set_absolute_volume_as_ct_role_ext(
+        &peer, absolute_volume);
     if (!bluetooth_service_result_ok(bt_result))
         return -RT_ERROR;
     return audio_service_set_volume(volume);

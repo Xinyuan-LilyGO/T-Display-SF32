@@ -7,6 +7,7 @@
 
 #include "audio_service.h"
 #include "bluetooth_service.h"
+#include "lv_font.h"
 #include "ui_config.h"
 #include "ui_navigation.h"
 #include "ui_status_bar.h"
@@ -645,7 +646,7 @@ static void music_page_open_list(void)
         lv_obj_set_size(music_list_index_labels[slot], 34, 22);
         lv_obj_set_pos(music_list_index_labels[slot], 14, 15);
         music_list_name_labels[slot] = music_page_create_label(
-            music_list_rows[slot], "", &lv_font_simsun_16_cjk,
+            music_list_rows[slot], "", &lv_font_source_han_sans_sc_16_cjk,
             UI_COLOR_TEXT);
         lv_obj_set_size(music_list_name_labels[slot], 360, 24);
         lv_label_set_long_mode(music_list_name_labels[slot],
@@ -798,7 +799,7 @@ static void music_page_create_track(ui_page_t *page)
     lv_obj_set_pos(track_source_label, 176, MUSIC_ARTWORK_Y + 4);
 
     track_title_label = music_page_create_label(
-        page->root, "", &lv_font_simsun_16_cjk,
+        page->root, "", &lv_font_source_han_sans_sc_16_cjk,
         UI_COLOR_TEXT);
     lv_obj_set_size(track_title_label, 280, 34);
     lv_label_set_long_mode(track_title_label, LV_LABEL_LONG_DOT);

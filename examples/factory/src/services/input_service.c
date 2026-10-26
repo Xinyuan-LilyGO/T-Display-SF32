@@ -4,6 +4,8 @@
 #include <rtdevice.h>
 #include <ulog.h>
 
+#include "platform_psram.h"
+
 #if defined(FACTORY_HW_USING_KEYBOARD) || \
     defined(FACTORY_HW_USING_JOYPAD)
 #include "xl9555_rt_device.h"
@@ -56,6 +58,8 @@ static rt_device_t input_expander;
 #endif
 static rt_mq_t input_event_queue;
 static rt_mutex_t input_callback_lock;
+static struct rt_thread input_thread_control;
+static void *input_thread_stack;
 static input_event_callback_t input_event_callback;
 static void *input_event_user_data;
 static bool input_initialized;
@@ -77,7 +81,9 @@ static uint8_t input_joypad_rgb_green = 255U;
 static uint8_t input_joypad_rgb_blue;
 static int32_t input_joypad_direction;
 static rt_tick_t input_joypad_repeat_tick;
+static struct rt_thread input_joypad_adc_thread_control;
 static rt_thread_t input_joypad_adc_thread;
+static void *input_joypad_adc_thread_stack;
 static bool input_joypad_first_sample_logged;
 static bool input_joypad_first_sample_started;
 static bool input_joypad_key_read_failure_reported;
@@ -438,16 +444,13 @@ static rt_err_t input_joypad_adc_init(void)
 static rt_err_t input_joypad_rgb_init(void)
 {
     rt_err_t result;
-    rt_err_t stop_result;
 
     result = ws2812_init();
     if (result == RT_EOK)
         result = ws2812_clear();
-    stop_result = ws2812_deinit();
-    if (result == RT_EOK)
-        result = stop_result;
     if (result != RT_EOK)
     {
+        (void)ws2812_deinit();
         input_init_errors |= INPUT_INIT_ERROR_WS2812;
         LOG_E("Initialize joypad WS2812 LEDs failed: %d", result);
         return result;
@@ -687,18 +690,32 @@ static rt_err_t input_joypad_adc_thread_start(void)
     if (!input_joypad_axis_ready || input_joypad_adc_thread != RT_NULL)
         return RT_EOK;
 
-    input_joypad_adc_thread = rt_thread_create(
-        "joy_adc", input_joypad_adc_thread_entry, RT_NULL,
-        INPUT_JOYPAD_THREAD_STACK_SIZE, INPUT_JOYPAD_THREAD_PRIORITY,
-        INPUT_JOYPAD_THREAD_TIMESLICE);
-    if (input_joypad_adc_thread == RT_NULL)
+    input_joypad_adc_thread_stack =
+        t_sf32_psram_alloc(INPUT_JOYPAD_THREAD_STACK_SIZE);
+    if (input_joypad_adc_thread_stack == RT_NULL)
         return -RT_ENOMEM;
+
+    result = rt_thread_init(&input_joypad_adc_thread_control, "joy_adc",
+                            input_joypad_adc_thread_entry, RT_NULL,
+                            input_joypad_adc_thread_stack,
+                            INPUT_JOYPAD_THREAD_STACK_SIZE,
+                            INPUT_JOYPAD_THREAD_PRIORITY,
+                            INPUT_JOYPAD_THREAD_TIMESLICE);
+    if (result != RT_EOK)
+    {
+        t_sf32_psram_free(input_joypad_adc_thread_stack);
+        input_joypad_adc_thread_stack = RT_NULL;
+        return result;
+    }
+    input_joypad_adc_thread = &input_joypad_adc_thread_control;
 
     result = rt_thread_startup(input_joypad_adc_thread);
     if (result != RT_EOK)
     {
-        rt_thread_delete(input_joypad_adc_thread);
+        rt_thread_detach(input_joypad_adc_thread);
         input_joypad_adc_thread = RT_NULL;
+        t_sf32_psram_free(input_joypad_adc_thread_stack);
+        input_joypad_adc_thread_stack = RT_NULL;
     }
     else
     {
@@ -710,7 +727,14 @@ static rt_err_t input_joypad_adc_thread_start(void)
 static rt_err_t input_profile_init(void)
 {
     rt_err_t key_result = input_joypad_keys_init();
-    rt_err_t axis_result = input_joypad_adc_init();
+    rt_err_t axis_result = RT_EOK;
+
+#ifdef FACTORY_JOYPAD_USING_ANALOG
+    axis_result = input_joypad_adc_init();
+#else
+    input_joypad_axis_ready = false;
+    LOG_I("Joypad analog axis disabled by configuration");
+#endif
 
     return (key_result == RT_EOK || axis_result == RT_EOK)
                ? RT_EOK
@@ -970,19 +994,31 @@ rt_err_t input_service_init(void)
         return input_init_result;
     }
 
-    thread = rt_thread_create("input", input_thread_entry, RT_NULL,
-                              INPUT_THREAD_STACK_SIZE,
-                              INPUT_THREAD_PRIORITY,
-                              INPUT_THREAD_TIMESLICE);
-    if (thread == RT_NULL)
+    input_thread_stack = t_sf32_psram_alloc(INPUT_THREAD_STACK_SIZE);
+    if (input_thread_stack == RT_NULL)
     {
         input_init_result = -RT_ENOMEM;
         return input_init_result;
     }
 
+    thread = &input_thread_control;
+    result = rt_thread_init(thread, "input", input_thread_entry, RT_NULL,
+                            input_thread_stack, INPUT_THREAD_STACK_SIZE,
+                            INPUT_THREAD_PRIORITY, INPUT_THREAD_TIMESLICE);
+    if (result != RT_EOK)
+    {
+        t_sf32_psram_free(input_thread_stack);
+        input_thread_stack = RT_NULL;
+        input_init_result = result;
+        return result;
+    }
+
     result = rt_thread_startup(thread);
     if (result != RT_EOK)
     {
+        rt_thread_detach(thread);
+        t_sf32_psram_free(input_thread_stack);
+        input_thread_stack = RT_NULL;
         input_init_result = result;
         return result;
     }
@@ -1018,7 +1054,11 @@ rt_err_t input_service_start_background(void)
         return -RT_ERROR;
 
     rgb_result = input_joypad_rgb_init();
+#ifdef FACTORY_JOYPAD_USING_ANALOG
     result = input_joypad_adc_thread_start();
+#else
+    result = RT_EOK;
+#endif
     if (result != RT_EOK)
     {
         input_init_errors |= INPUT_INIT_ERROR_ADS1115;
@@ -1093,7 +1133,6 @@ rt_err_t input_service_set_joypad_rgb(bool enabled, uint8_t brightness,
 {
 #if defined(FACTORY_HW_USING_JOYPAD)
     rt_err_t result;
-    rt_err_t stop_result;
     rt_uint8_t driver_brightness;
 
     if (!input_initialized || !input_joypad_rgb_ready)
@@ -1113,9 +1152,6 @@ rt_err_t input_service_set_joypad_rgb(bool enabled, uint8_t brightness,
     }
     if (result == RT_EOK)
         result = ws2812_show();
-    stop_result = ws2812_deinit();
-    if (result == RT_EOK)
-        result = stop_result;
     if (result == RT_EOK)
     {
         input_joypad_rgb_enabled = enabled;

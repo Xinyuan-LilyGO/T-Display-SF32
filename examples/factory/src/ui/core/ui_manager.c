@@ -12,6 +12,7 @@
 #include "ui_navigation.h"
 #include "ui_status_bar.h"
 #include "ui_theme.h"
+#include "platform_psram.h"
 
 extern rt_err_t littlevgl2rtt_init(const char *name);
 
@@ -22,6 +23,8 @@ extern rt_err_t littlevgl2rtt_init(const char *name);
 #endif
 
 static rt_thread_t ui_thread;
+static struct rt_thread ui_thread_control;
+static void *ui_thread_stack;
 static rt_mutex_t ui_mutex;
 static bool ui_ready;
 static bool ui_init_attempted;
@@ -219,18 +222,34 @@ rt_err_t ui_manager_init(void)
     if (result != RT_EOK)
         goto exit;
 
-    ui_thread = rt_thread_create("ui_task", ui_manager_thread_entry,
-                                 RT_NULL, UI_TASK_STACK_SIZE,
-                                 UI_TASK_PRIORITY, UI_TASK_TICK);
-    if (ui_thread == RT_NULL)
+    ui_thread_stack = t_sf32_psram_alloc(UI_TASK_STACK_SIZE);
+    if (ui_thread_stack == RT_NULL)
     {
         result = -RT_ENOMEM;
         goto exit;
     }
 
+    result = rt_thread_init(&ui_thread_control, "ui_task",
+                            ui_manager_thread_entry, RT_NULL,
+                            ui_thread_stack, UI_TASK_STACK_SIZE,
+                            UI_TASK_PRIORITY, UI_TASK_TICK);
+    if (result != RT_EOK)
+    {
+        t_sf32_psram_free(ui_thread_stack);
+        ui_thread_stack = RT_NULL;
+        goto exit;
+    }
+    ui_thread = &ui_thread_control;
+
     result = rt_thread_startup(ui_thread);
     if (result != RT_EOK)
+    {
+        rt_thread_detach(ui_thread);
+        ui_thread = RT_NULL;
+        t_sf32_psram_free(ui_thread_stack);
+        ui_thread_stack = RT_NULL;
         goto exit;
+    }
 
     ui_ready = true;
     ui_context_set_display_ready(true);

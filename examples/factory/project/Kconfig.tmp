@@ -1,4 +1,5 @@
-source "D:/Software/OpenSiFli/sifli-sdk/customer/boards/t-display-sf32/hcpu/Kconfig.board"
+source "D:/Software/OpenSiFli/sifli-sdk-v2.5.1/customer/boards/t-display-sf32/hcpu/Kconfig.board"
 source "$SIFLI_SDK/customer/boards/Kconfig.v2"
 source "$SIFLI_SDK/Kconfig.v2"
+orsource "sf-pkgs/Kconfig.conandeps"
 rsource "Kconfig.proj"
