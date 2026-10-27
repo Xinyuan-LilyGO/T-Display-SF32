@@ -1,6 +1,11 @@
 #ifndef RTCONFIG_PROJECT_H__
 #define RTCONFIG_PROJECT_H__
 
+/* Keep mbedTLS AES lookup tables in Flash instead of generating them in SRAM. */
+#if defined(PKG_USING_MBEDTLS) && !defined(MBEDTLS_AES_ROM_TABLES)
+    #define MBEDTLS_AES_ROM_TABLES
+#endif
+
 #if defined(_MSC_VER)
     #define RT_HEAP_SIZE   (680000)
     #define NORESOURCE  //RT_VESRION in winuser.h

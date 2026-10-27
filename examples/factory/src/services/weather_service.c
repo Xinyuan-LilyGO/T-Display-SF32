@@ -242,6 +242,9 @@ static void weather_service_thread_entry(void *parameter)
         result.state = WEATHER_SERVICE_DATA_ERROR;
         goto exit;
     }
+    /* The location body is no longer needed while fetching/parsing forecast. */
+    web_free(location_response);
+    location_response = RT_NULL;
     rt_snprintf(forecast_url, sizeof(forecast_url), WEATHER_FORECAST_URL,
                 latitude, longitude);
     if (weather_service_http_get(forecast_url,

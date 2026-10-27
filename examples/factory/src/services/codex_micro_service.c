@@ -9,6 +9,7 @@
 #include <ulog.h>
 
 #include "battery_service.h"
+#include "mem_section.h"
 
 #ifdef BLUETOOTH
 #include "att.h"
@@ -74,8 +75,34 @@ typedef struct
 static codex_micro_status_t codex_status;
 static struct rt_thread codex_worker;
 static struct rt_semaphore codex_work_sem;
+
+/* CPU-only storage, like the other factory service stacks. Keep it out of
+ * the internal SRAM heap needed by the audio decoder and LVGL. */
+#if defined(BSP_USING_PSRAM)
+L2_NON_RET_BSS_SECT_BEGIN(factory_codex_buffers)
+L2_NON_RET_BSS_SECT(factory_codex_buffers,
+    ALIGN(8) static uint8_t codex_worker_stack[CODEX_WORKER_STACK_SIZE]);
+L2_NON_RET_BSS_SECT(factory_codex_buffers,
+    static char codex_rx_reassembly[CODEX_RPC_BUFFER_SIZE]);
+L2_NON_RET_BSS_SECT(factory_codex_buffers,
+    static codex_rx_message_t codex_rx_queue[CODEX_RX_QUEUE_DEPTH]);
+L2_NON_RET_BSS_SECT(factory_codex_buffers,
+    static codex_tx_message_t codex_tx_queue[CODEX_TX_QUEUE_DEPTH]);
+L2_NON_RET_BSS_SECT(factory_codex_buffers,
+    static codex_rx_message_t codex_work_rx_message);
+L2_NON_RET_BSS_SECT(factory_codex_buffers,
+    static codex_tx_message_t codex_work_tx_message);
+L2_NON_RET_BSS_SECT_END
+#else
 ALIGN(RT_ALIGN_SIZE)
 static uint8_t codex_worker_stack[CODEX_WORKER_STACK_SIZE];
+static char codex_rx_reassembly[CODEX_RPC_BUFFER_SIZE];
+static codex_rx_message_t codex_rx_queue[CODEX_RX_QUEUE_DEPTH];
+static codex_tx_message_t codex_tx_queue[CODEX_TX_QUEUE_DEPTH];
+static codex_rx_message_t codex_work_rx_message;
+static codex_tx_message_t codex_work_tx_message;
+#endif
+
 static bool codex_worker_initialized;
 static bool codex_registration_pending;
 static bool codex_services_registered;
@@ -87,19 +114,13 @@ static uint8_t codex_security_retry_count;
 static uint8_t codex_conn_idx = 0xFFU;
 static uint16_t codex_key_state;
 
-static char codex_rx_reassembly[CODEX_RPC_BUFFER_SIZE];
 static uint16_t codex_rx_reassembly_length;
-static codex_rx_message_t codex_rx_queue[CODEX_RX_QUEUE_DEPTH];
 static uint8_t codex_rx_head;
 static uint8_t codex_rx_tail;
 static uint8_t codex_rx_count;
-static codex_tx_message_t codex_tx_queue[CODEX_TX_QUEUE_DEPTH];
 static uint8_t codex_tx_head;
 static uint8_t codex_tx_tail;
 static uint8_t codex_tx_count;
-/* The RT-Thread soft-timer thread only has a 1 KB stack on this target. */
-static codex_rx_message_t codex_work_rx_message;
-static codex_tx_message_t codex_work_tx_message;
 
 #ifdef BLUETOOTH
 static sibles_hdl codex_hids_handle;

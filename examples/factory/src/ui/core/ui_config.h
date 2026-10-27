@@ -8,7 +8,8 @@
 #define UI_SCREEN_WIDTH  480
 #define UI_SCREEN_HEIGHT 480
 
-#define UI_TASK_STACK_SIZE (6U * 1024U)
+/* The crash dump measured 95% usage with a 6 KB stack. This stack is in PSRAM. */
+#define UI_TASK_STACK_SIZE (8U * 1024U)
 #define UI_TASK_PRIORITY   RT_THREAD_PRIORITY_HIGH
 #define UI_TASK_TICK       10U
 

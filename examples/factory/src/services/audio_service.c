@@ -60,9 +60,12 @@ static size_t audio_music_track_count;
 static int32_t audio_music_current_index = -1;
 static uint32_t audio_music_position_seconds;
 static uint32_t audio_music_duration_seconds;
+static uint32_t audio_music_elapsed_ms;
+static rt_tick_t audio_music_start_tick;
 static audio_music_mode_t audio_music_mode = AUDIO_MUSIC_MODE_ORDER;
 static bool audio_music_playing;
 static bool audio_music_paused;
+static bool audio_music_start_pending;
 static bool audio_record_session_active;
 static bool audio_record_segment_running;
 static bool audio_record_pending;
@@ -369,49 +372,54 @@ static int32_t audio_service_music_next_index_locked(bool forward)
 
 static rt_err_t audio_service_music_start_locked(int32_t index)
 {
+    const audio_manager_t *audio;
     const char *path;
+    bool restart_current;
 
     if (index < 0 || (size_t)index >= audio_music_track_count)
         return -RT_EINVAL;
+    audio = get_audio_info();
+    if (audio_music_playing && !audio_music_paused &&
+            audio_music_current_index == index &&
+            (audio_music_start_pending ||
+             (audio != RT_NULL && audio->mp3_handle != RT_NULL)))
+    {
+        return RT_EOK;
+    }
+    restart_current = audio_music_playing;
     path = audio_music_tracks[index].path;
     audio_music_current_index = index;
     audio_music_position_seconds = 0U;
     audio_music_duration_seconds = 0U;
+    audio_music_elapsed_ms = 0U;
+    audio_music_start_tick = rt_tick_get_millisecond();
     audio_music_playing = true;
     audio_music_paused = false;
+    audio_music_start_pending = true;
+
+    /*
+     * The SDK normally tries to switch files on the existing decoder.  That
+     * path keeps the decoder output buffers and cache alive while rebuilding
+     * the Helix decoder, which exceeds the factory image's small internal
+     * heap during a manual next/previous operation.  Queue STOP first so the
+     * SDK closes and frees the old decoder before processing the new PLAY.
+     */
+    if (restart_current)
+        mp3_play_stop();
     mp3_file_play(path);
     return RT_EOK;
 }
 
-static void audio_service_mp3_event(audio_mp3_event_t event,
-                                    uint32_t value, void *user_data)
+static void audio_service_music_update_elapsed_locked(void)
 {
-    int32_t next_index;
+    uint32_t elapsed;
 
-    (void)user_data;
-    if (audio_music_lock == RT_NULL)
+    if (!audio_music_playing || audio_music_paused)
         return;
-    rt_mutex_take(audio_music_lock, RT_WAITING_FOREVER);
-    if (event == AUDIO_MP3_EVENT_PROGRESS)
-    {
-        audio_music_position_seconds = value;
-    }
-    else if (event == AUDIO_MP3_EVENT_DURATION)
-    {
-        audio_music_duration_seconds = value;
-    }
-    else if (event == AUDIO_MP3_EVENT_PLAY_TO_END)
-    {
-        next_index = audio_service_music_next_index_locked(true);
-        if (next_index >= 0)
-            audio_service_music_start_locked(next_index);
-        else
-        {
-            audio_music_playing = false;
-            audio_music_paused = false;
-        }
-    }
-    rt_mutex_release(audio_music_lock);
+    elapsed = audio_music_elapsed_ms +
+              (uint32_t)rt_tick_get_millisecond() -
+              (uint32_t)audio_music_start_tick;
+    audio_music_position_seconds = elapsed / 1000U;
 }
 
 rt_err_t audio_service_init(void)
@@ -447,7 +455,16 @@ rt_err_t audio_service_init(void)
     audio_music_lock = rt_mutex_create("music_srv", RT_IPC_FLAG_PRIO);
     if (audio_music_lock == RT_NULL)
         return -RT_ENOMEM;
-    mp3_set_event_callback(audio_service_mp3_event, RT_NULL);
+
+    /*
+     * Do not register an MP3 callback here.  The SDK handles a non-NULL
+     * callback by calling mp3ctrl_getinfo() after every CMD_MP3_PALY.  That
+     * function opens the file a second time and allocates another decoder
+     * cache, which exhausts the factory image's internal heap for SD tracks.
+     * The music service below derives its state from the active SDK handle
+     * and keeps elapsed time locally instead.
+     */
+    mp3_set_event_callback(RT_NULL, RT_NULL);
 
     audio_initialized = true;
     audio_speaker_enabled = false;
@@ -900,18 +917,46 @@ rt_err_t audio_service_music_scan(void)
 
 rt_err_t audio_service_music_get_status(audio_music_status_t *status)
 {
+    const audio_manager_t *audio;
+    int32_t next_index;
+
     if (status == RT_NULL)
         return -RT_EINVAL;
     if (audio_music_lock == RT_NULL)
         return -RT_ERROR;
     rt_mutex_take(audio_music_lock, RT_WAITING_FOREVER);
+
+    audio = get_audio_info();
+    if (audio != RT_NULL)
+    {
+        if (audio_music_start_pending && audio->mp3_handle != RT_NULL)
+            audio_music_start_pending = false;
+
+        /* With the SDK callback disabled, detect end-of-track when the
+         * manager has processed its queued stop command. */
+        if (audio_music_playing && !audio_music_start_pending &&
+                audio->mp3_handle == RT_NULL && !audio->mp3_paused)
+        {
+            next_index = audio_service_music_next_index_locked(true);
+            if (next_index >= 0)
+                audio_service_music_start_locked(next_index);
+            else
+            {
+                audio_music_playing = false;
+                audio_music_paused = false;
+            }
+        }
+    }
+    audio_service_music_update_elapsed_locked();
     status->track_count = audio_music_track_count;
     status->current_index = audio_music_current_index;
     status->position_seconds = audio_music_position_seconds;
     status->duration_seconds = audio_music_duration_seconds;
     status->mode = audio_music_mode;
-    status->playing = audio_music_playing;
-    status->paused = audio_music_paused;
+    status->playing = audio_music_playing &&
+                      (audio_music_start_pending ||
+                       (audio != RT_NULL && audio->mp3_handle != RT_NULL));
+    status->paused = status->playing && audio_music_paused;
     rt_mutex_release(audio_music_lock);
     return RT_EOK;
 }
@@ -965,6 +1010,8 @@ rt_err_t audio_service_music_pause(void)
         rt_mutex_release(audio_music_lock);
         return -RT_ERROR;
     }
+    audio_service_music_update_elapsed_locked();
+    audio_music_elapsed_ms = audio_music_position_seconds * 1000U;
     audio_music_paused = true;
     mp3_play_pause();
     rt_mutex_release(audio_music_lock);
@@ -982,6 +1029,7 @@ rt_err_t audio_service_music_resume(void)
         return -RT_ERROR;
     }
     audio_music_paused = false;
+    audio_music_start_tick = rt_tick_get_millisecond();
     mp3_play_resume();
     rt_mutex_release(audio_music_lock);
     return RT_EOK;
@@ -994,6 +1042,8 @@ rt_err_t audio_service_music_stop(void)
     rt_mutex_take(audio_music_lock, RT_WAITING_FOREVER);
     audio_music_playing = false;
     audio_music_paused = false;
+    audio_music_start_pending = false;
+    audio_music_elapsed_ms = 0U;
     audio_music_position_seconds = 0U;
     audio_music_duration_seconds = 0U;
     mp3_play_stop();
