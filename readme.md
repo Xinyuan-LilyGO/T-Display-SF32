@@ -168,7 +168,7 @@ Please refer to [SIFLI-SDK macOS and Linux Installation](https://docs.sifli.com/
 ![Build](./image/bulid.png)
 ![Build](./image/build3.png)
 
-# Impeller工具烧录
+# Impeller tool Flashing and Download
 1. Extract the file `./tools/Impeller_common.7z` and double-click to run `Impeller.exe`;  
 2. Connect the T-Display-SF32 to your computer; Impeller will automatically detect the device;  
 3. Click on `Parameters` in the top menu bar, then enter the path of the firmware folder you wish to upgrade into `Upgrade Package Path.` The software will automatically check the files within the package;  
