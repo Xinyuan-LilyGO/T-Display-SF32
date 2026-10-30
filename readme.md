@@ -168,6 +168,15 @@ Please refer to [SIFLI-SDK macOS and Linux Installation](https://docs.sifli.com/
 ![Build](./image/bulid.png)
 ![Build](./image/build3.png)
 
+# Impeller工具烧录
+1. Extract the file `./tools/Impeller_common.7z` and double-click to run `Impeller.exe`;  
+2. Connect the T-Display-SF32 to your computer; Impeller will automatically detect the device;  
+3. Click on `Parameters` in the top menu bar, then enter the path of the firmware folder you wish to upgrade into `Upgrade Package Path.` The software will automatically check the files within the package;  
+4. On the right side, select the chip model for programming: SF32LB52x, interface: UART, baud rate: 3000000bps, check the `Restart after download` option, then click `Return to Main Interface`;  
+5. Locate your COM port, check the corresponding channel option, and click the programming button to begin flashing.
+![Build](./image/impeller_flash_download.png)
+![Build](./image/impeller_set.png)
+
 # Official Documentation
 This project references examples from the official website. For detailed documentation, please refer to the following links:
 [SIFLI-SDK](https://docs.sifli.com/projects/sdk/v2.4/sf32lb52x/index.html)

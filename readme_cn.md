@@ -172,6 +172,16 @@ T-SF32-Dispaly开发板是基于思澈科技(SiFli)最新推出的超低功耗AI
 ![Build](./image/bulid.png)
 ![Build](./image/build3.png)
 
+## Impeller工具烧录
+1、解压./tools/Impeller_common.7z,双击运行Impeller.exe；
+2、T-Display-SF32连接电脑，Impeller会自动识别设备；
+3、点击上方菜单栏里面的`参数`,把需要升级的固件文件夹路径填写到`升级包路径`,软件会自己检测升级包里面的文件；
+4、在右边选择烧录的芯片型号：SF32LB52x,接口：UART,波特率：3000000bps,勾选`下载完重启`选项，点击`返回主界面`即可。
+5、找到你COM口，勾选前面的通道选项，再点击烧录按钮，即可烧录
+![Build](./image/impeller_flash_download.png)
+![Build](./image/impeller_set.png)
+
+
 # 🎯官网文档
 本例程参考官方网站给出示例，具体文档请参考以下链接：
 [SFILI-SDK](https://docs.sifli.com/projects/sdk/v2.4/sf32lb52x/index.html)
